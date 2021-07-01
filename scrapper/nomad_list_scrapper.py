@@ -45,7 +45,8 @@ class NomadListScrapper:
             'city': text.h2.text if text.h2 else "-",
             'country': text.h3.text if text.h3 else "-",
             'description': city_li.find(class_="action").p.text,
-            'actions': self.get_city_actions(city_li)
+            'actions': self.get_city_actions(city_li),
+            'attributes': self.get_city_attributes(city_li)
         }
 
         return city
@@ -59,7 +60,7 @@ class NomadListScrapper:
         action = {}
         for action_span in city_li.find(class_="action").find_all("span"):
             score_class_name = action_span['class'][0]
-            match = NomadListScrapper.action_regex.match(score_class_name)
+            match = self.action_regex.match(score_class_name)
             if match:
                 span_type = match.group(1)
                 action_name = match.group(2)
@@ -76,3 +77,37 @@ class NomadListScrapper:
                     action = {}
 
         return actions
+
+    def get_city_attributes(self, city_li):
+        """
+        Given the city li, takes all the information about the attributes in the city card.
+        Returns all the attributes as a list of dicts.
+        """
+        attributes = []
+        for attribute_element_span in city_li.find(class_="attributes").find_all("span", class_="element"):
+            attribute = {}
+            position = attribute_element_span['class'][1]
+            if position == "bottom-left":
+                weather_emoji = attribute_element_span.find("span", class_="weather-emoji").text
+                temperature = attribute_element_span.find("span", class_="temperature")
+                attribute.update({'temperature': {}, 'heat_index': {}})
+                for heat_index_span in temperature.find("span", class_="label-heat-index").find_all("span",
+                                                                                                    class_="value"):
+                    attribute['heat_index'].update({heat_index_span['class'][-1]: heat_index_span.text})
+                for temperature_span in temperature.find_all("span", class_="value"):
+                    # TODO review. It takes all the span.value (find siblings)
+                    attribute['temperature'].update({temperature_span['class'][-1]: temperature_span.text})
+                air_quality = attribute_element_span.find("span", class_="air_quality")
+                attribute.update(
+                    {air_quality.find("span", class_="above").text: air_quality.find("span", class_="value").text})
+            elif position == "top-left":
+                # TODO complete this
+                pass
+            elif position == "bottom-right":
+                attribute.update({'price': attribute_element_span.span.text})
+            elif position == "top-right":
+                internet_span = attribute_element_span.find("span", class_="right")
+                print("internet_span", internet_span)
+                attribute.update({'internet': {'value': internet_span.find("span", class_="value").text,
+                                               'unit': internet_span.find("span", class_="mbps").text}})
+        return attributes
