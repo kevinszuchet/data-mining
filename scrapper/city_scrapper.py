@@ -1,5 +1,5 @@
 import re
-
+from scrapper.attribute_element_scrapper import AttributeElementScrapper
 
 class CityScrapper:
     """Class that knows how to get data from each city card."""
@@ -36,6 +36,8 @@ class CityScrapper:
                 span_type = match.group(1)
                 action_name = match.group(2)
 
+                # TODO Avoid mutability
+
                 if span_type == "label":
                     # TODO review where the 'All' (next to Overall) come from and replace it by nothing!
                     label = action_span.text.replace("All", "").strip() if action_span.text else '-'
@@ -55,30 +57,9 @@ class CityScrapper:
         Returns all the attributes as a list of dicts.
         """
         attributes = []
-        for attribute_element_span in city_li.find(class_="attributes").find_all("span", class_="element"):
-            attribute = {}
-            position = attribute_element_span['class'][1]
-            if position == "bottom-left":
-                weather_emoji = attribute_element_span.find("span", class_="weather-emoji").text
-                temperature = attribute_element_span.find("span", class_="temperature")
-                attribute.update({'temperature': {}, 'heat_index': {}})
-                for heat_index_span in temperature.find("span", class_="label-heat-index").find_all("span",
-                                                                                                    class_="value"):
-                    attribute['heat_index'].update({heat_index_span['class'][-1]: heat_index_span.text})
-                for temperature_span in temperature.find_all("span", class_="value"):
-                    # TODO review. It takes all the span.value (find siblings)
-                    attribute['temperature'].update({temperature_span['class'][-1]: temperature_span.text})
-                air_quality = attribute_element_span.find("span", class_="air_quality")
-                attribute.update(
-                    {air_quality.find("span", class_="above").text: air_quality.find("span", class_="value").text})
-            elif position == "top-left":
-                # TODO complete this
-                pass
-            elif position == "bottom-right":
-                attribute.update({'price': attribute_element_span.span.text})
-            elif position == "top-right":
-                internet_span = attribute_element_span.find("span", class_="right")
-                print("internet_span", internet_span)
-                attribute.update({'internet': {'value': internet_span.find("span", class_="value").text,
-                                               'unit': internet_span.find("span", class_="mbps").text}})
+        attribute = {}
+        for span in city_li.find(class_="attributes").find_all("span", class_="element"):
+            position = span['class'][1]
+            attribute_element_scrapper = AttributeElementScrapper(position)
+            attribute.update(attribute_element_scrapper.get_info(span))
         return attributes
