@@ -1,5 +1,8 @@
+from scrapper.nomad_list_scrapper import NomadListScrapper
+
+
 def main():
-    pass
+    NomadListScrapper().get_cities()
 
 
 if __name__ == "__main__":
