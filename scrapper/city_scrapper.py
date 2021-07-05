@@ -1,15 +1,26 @@
 import re
+from bs4 import BeautifulSoup
 from scrapper.attribute_element_scrapper import AttributeElementScrapper
+
 
 class CityScrapper:
     """Class that knows how to get data from each city card."""
     action_regex = re.compile(r'(label|rating)-(\w+)-score')
 
-    def get_city_information(self, city_li):
+    @staticmethod
+    def get_city_url(city_li):
+        """Given the city li, returns the url of it to go to the details."""
+        text = city_li.find(class_="text")
+        return text.h2.a.attrs["href"].strip()
+
+    def get_city_details(self, city_details_html):
         """
-        Given the city li, takes all the information available in the home page.
+        Given the city li, takes all the available information about the city.
         Then, returns a dict with all that information.
         """
+
+        soup = BeautifulSoup(city_details_html, "html.parser")
+        return
         text = city_li.find(class_="text")
 
         city = {
