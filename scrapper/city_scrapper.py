@@ -20,7 +20,7 @@ class CityScrapper:
         """
 
         soup = BeautifulSoup(city_details_html, "html.parser")
-        return
+        return city_details_html
         text = city_li.find(class_="text")
 
         city = {
