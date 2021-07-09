@@ -21,6 +21,7 @@ class NomadListScrapper:
         self._session = FuturesSession()
 
     def _get_all_the_cities(self):
+        """Scroll to the end of the main page fetching all the cities as li tags."""
         self._driver.get(self._baseUrl)
         scroll_height = self._get_scroll_height()
 
