@@ -1,5 +1,10 @@
+from .city_scrapper import CityScrapper
+
+
 class TabScrapper:
     def get_information(self):
+        city_info = CityScrapper.get_city_details()
+
         pass
 
 
@@ -27,4 +32,6 @@ class ProsAndCons(TabScrapper):
     def get_information(self):
         pass
 
+
+print(CityScrapper)
 # TODO RemoteJobs?, Reviews?, Photos?

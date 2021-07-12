@@ -1,6 +1,6 @@
 import re
 from bs4 import BeautifulSoup
-from scrapper.attribute_element_scrapper import AttributeElementScrapper
+from .attribute_element_scrapper import AttributeElementScrapper
 
 
 class CityScrapper:
@@ -21,6 +21,7 @@ class CityScrapper:
 
         soup = BeautifulSoup(city_details_html, "html.parser")
         return city_details_html
+        
         text = city_li.find(class_="text")
 
         city = {
