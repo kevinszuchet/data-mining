@@ -1,6 +1,6 @@
 import re
 from bs4 import BeautifulSoup
-from .attribute_element_scrapper import AttributeElementScrapper
+from scrapper.attribute_element_scrapper import AttributeElementScrapper
 
 
 class CityScrapper:
@@ -15,13 +15,21 @@ class CityScrapper:
 
     def get_city_details(self, city_details_html):
         """
-        Given the city li, takes all the available information about the city.
+        Given the city details html, takes all the available information about the city within the tabs.
         Then, returns a dict with all that information.
         """
 
         soup = BeautifulSoup(city_details_html, "html.parser")
+        # TODO iterate over all the tabs scrappers to get all the available information about the city
+        # return {tab_scrapper.tab_name(): tab_scrapper.get_information() for tab_scrapper in list_of_tabs_scrappers}
         return city_details_html
-        
+
+    def OLD_get_city_details(self, city_li):
+        """
+        Given the city li, takes all the available information about the city.
+        Then, returns a dict with all that information.
+        """
+
         text = city_li.find(class_="text")
 
         city = {
