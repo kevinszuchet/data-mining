@@ -1,6 +1,6 @@
 import re
 from bs4 import BeautifulSoup
-from scrapper.attribute_element_scrapper import AttributeElementScrapper
+from attribute_element_scrapper import AttributeElementScrapper
 
 
 class CityScrapper:
