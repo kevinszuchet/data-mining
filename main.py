@@ -2,9 +2,9 @@ from scrapper.nomad_list_scrapper import NomadListScrapper
 
 
 def main():
-    citites = NomadListScrapper().get_cities()
+    cities = NomadListScrapper().get_cities()
     print("Cities:")
-    print(citites)
+    print(cities)
 
 
 if __name__ == "__main__":
