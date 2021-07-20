@@ -1,30 +1,37 @@
 from bs4 import BeautifulSoup
 import requests as rq
-# from city_scrapper import CityScrapper
-#
-# city_li = 'lisbon'
-# lisbon_url = CityScrapper.get_city_url(city_li)
-# print(f'{lisbon_url}')
 
 
 class TabScrapper:
     def __init__(self, soup_object):
         self.soup_object = soup_object
-        self.div_tabs = self.soup_object.find("div", class_="tabs")
-        self.ul = self.div_tabs.find("div", class_="ul")
+        self.div_tabs = self.soup_object.find("div", class_="tabs").find("div", class_="ul")
         # print(f'ul: {self.ul.prettify()}')
+
+    @staticmethod
+    def tab_name(tab):
+        return tab.find("a").get_text(strip=True).replace(' ', '')
+
+    @staticmethod
+    def valid_tab(tab):
+        try:
+            eval(f"{TabScrapper.tab_name(tab)}TabScrapper")
+        except NameError:
+            return False
+        else:
+            return True
 
     def get_information(self):
         tabs_dict = {}
         for tab_element in self.ul.find_all("h2", class_="li active"):
-            tab_title_element = tab_element.find("a")   # , title="Lisbon City Scores"
+            tab_title_element = tab_element.find("a")  # , title="Lisbon City Scores"
             tab_title = tab_title_element.get_text(strip=True)
             tab_link = tab_title_element["href"]
 
             tabs_dict[tab_title] = tab_link
 
         for tab_element in self.ul.find_all("h2", class_="li"):
-            tab_title_element = tab_element.find("a")
+            tab_title_element = tab_element.find("a").get_text(strip=True)
             tab_title = tab_title_element.get_text(strip=True)
             tab_link = tab_title_element["href"]
 
@@ -59,28 +66,28 @@ class ScoresTabScrapper(TabScrapper):
 
 
 class DigitalNomadGuideTabScrapper(TabScrapper):
-        def __init__(self, soup_object):
-            super().__init__(soup_object)
-            # self.tabs_dict = tabs_dict
-            # self.scores_tab_path = "https://nomadlist.com" + self.tabs_dict['Digital Nomad Guide']
-            self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-            self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-            self.tab_digital_nomad_guide = self.tab_scroller.find("div", class_="tab tab-digital-nomad-guide")
+    def __init__(self, soup_object):
+        super().__init__(soup_object)
+        # self.tabs_dict = tabs_dict
+        # self.scores_tab_path = "https://nomadlist.com" + self.tabs_dict['Digital Nomad Guide']
+        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
+        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
+        self.tab_digital_nomad_guide = self.tab_scroller.find("div", class_="tab tab-digital-nomad-guide")
 
-        def get_information(self):
-            list_of_keys = []
-            list_of_values = []
-            for key_element in self.tab_digital_nomad_guide.find_all("td", class_="key"):
-                score_title = key_element.get_text(strip=True)
-                list_of_keys.append(score_title)
+    def get_information(self):
+        list_of_keys = []
+        list_of_values = []
+        for key_element in self.tab_digital_nomad_guide.find_all("td", class_="key"):
+            score_title = key_element.get_text(strip=True)
+            list_of_keys.append(score_title)
 
-            for value_element in self.tab_digital_nomad_guide.find_all("td", class_="value"):
-                score_value = value_element.text
-                list_of_values.append(score_value)
+        for value_element in self.tab_digital_nomad_guide.find_all("td", class_="value"):
+            score_value = value_element.text
+            list_of_values.append(score_value)
 
-            scores_tab_info_dict = dict(zip(list_of_keys, list_of_values))
+        scores_tab_info_dict = dict(zip(list_of_keys, list_of_values))
 
-            return scores_tab_info_dict
+        return scores_tab_info_dict
 
 
 class CostOfLivingTabScrapper(TabScrapper):
@@ -109,7 +116,7 @@ class CostOfLivingTabScrapper(TabScrapper):
         return scores_tab_info_dict
 
 
-class ProsAndCons(TabScrapper):
+class ProsAndConsTabScrapper(TabScrapper):
     def __init__(self, soup_object):
         super().__init__(soup_object)
         # self.tabs_dict = tabs_dict
@@ -131,7 +138,7 @@ class ProsAndCons(TabScrapper):
         return list_of_pros_list_and_cons_list
 
 
-class Reviews(TabScrapper):
+class ReviewsTabScrapper(TabScrapper):
     def __init__(self, soup_object):
         super().__init__(soup_object)
         # self.tabs_dict = tabs_dict
@@ -150,7 +157,7 @@ class Reviews(TabScrapper):
         return list_of_reviews
 
 
-class Weather(TabScrapper):
+class WeatherTabScrapper(TabScrapper):
     def __init__(self, soup_object):
         super().__init__(soup_object)
         # self.tabs_dict = tabs_dict
@@ -173,7 +180,6 @@ class Weather(TabScrapper):
         return weather_data
 
 
-# print(CityScrapper)
 # TODO RemoteJobs?, Reviews?, Photos?
 def main():
     nomadlist_lisbon_url = "https://nomadlist.com/lisbon"
@@ -193,13 +199,13 @@ def main():
     cost_of_living_tab_scrapper_object = CostOfLivingTabScrapper(nomadlist_lisbon_soup)
     print(cost_of_living_tab_scrapper_object.get_information())
 
-    pros_and_cons_tab_scrapper_object = ProsAndCons(nomadlist_lisbon_soup)
+    pros_and_cons_tab_scrapper_object = ProsAndConsTabScrapper(nomadlist_lisbon_soup)
     print(pros_and_cons_tab_scrapper_object.get_information())
 
-    reviews_tab_scrapper_object = Reviews(nomadlist_lisbon_soup)
+    reviews_tab_scrapper_object = ReviewsTabScrapper(nomadlist_lisbon_soup)
     print(reviews_tab_scrapper_object.get_information())
 
-    weather_tab_scrapper_object = Weather(nomadlist_lisbon_soup)
+    weather_tab_scrapper_object = WeatherTabScrapper(nomadlist_lisbon_soup)
     print(weather_tab_scrapper_object.get_information())
 
 
