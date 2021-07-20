@@ -1,17 +1,31 @@
 import re
 from bs4 import BeautifulSoup
-from attribute_element_scrapper import AttributeElementScrapper
+from scrapper.tab_scrapper import TabScrapper, CostOfLivingTabScrapper, DigitalNomadGuideTabScrapper, \
+    ProsAndConsTabScrapper, ReviewsTabScrapper, ScoresTabScrapper, WeatherTabScrapper
 
 
 class CityScrapper:
     """Class that knows how to get data from each city card."""
     action_regex = re.compile(r'(label|rating)-(\w+)-score')
 
+    # To avoid cities lis with 'data-slug="{slugName}"'
+    city_template_re = re.compile(r'{\w+}')
+
+    @staticmethod
+    def valid_tag(city_li):
+        """Given the city li, checks if the tag is valid."""
+        attrs = city_li.attrs
+        return attrs.get('data-type') == 'city' and not CityScrapper.city_template_re.search(attrs.get('data-slug'))
+
     @staticmethod
     def get_city_url(city_li):
         """Given the city li, returns the url of it to go to the details."""
-        text = city_li.find(class_="text")
-        return text.h2.a.attrs["href"].strip()
+        a = city_li.find("a", attrs={'itemprop': 'url'})
+        return a.attrs.get("href").strip()
+
+    def _get_tab_information(self, tab, city_details_soup):
+        tab_name = TabScrapper.tab_name(tab)
+        return eval(f"{tab_name}TabScrapper")(city_details_soup).get_information()
 
     def get_city_details(self, city_details_html):
         """
@@ -19,67 +33,18 @@ class CityScrapper:
         Then, returns a dict with all that information.
         """
 
-        soup = BeautifulSoup(city_details_html, "html.parser")
-        # TODO iterate over all the tabs scrappers to get all the available information about the city
-        # return {tab_scrapper.tab_name(): tab_scrapper.get_information() for tab_scrapper in list_of_tabs_scrappers}
-        return city_details_html
+        city_details_soup = BeautifulSoup(city_details_html, "html.parser")
+        text = city_details_soup.find(class_="text")
 
-    def OLD_get_city_details(self, city_li):
-        """
-        Given the city li, takes all the available information about the city.
-        Then, returns a dict with all that information.
-        """
+        if not text:
+            return
 
-        text = city_li.find(class_="text")
+        tas_tags = city_details_soup.find("div", class_="tabs").find("div", class_="ul").find_all("h2", class_="li")
+        tabs_information = {TabScrapper.tab_name(tab): self._get_tab_information(tab, city_details_soup)
+                            for tab in tas_tags if TabScrapper.valid_tab(tab)}
 
-        city = {
-            'city': text.h2.text if text.h2 else "-",
-            'country': text.h3.text if text.h3 else "-",
-            'description': city_li.find(class_="action").p.text,
-            'actions': self.get_city_actions(city_li),
-            'attributes': self.get_city_attributes(city_li)
+        return {
+            'city': text.h1.text if text.h1 else "-",
+            'country': text.h2.text if text.h2 else "-",
+            **tabs_information
         }
-
-        return city
-
-    def get_city_actions(self, city_li):
-        """
-        Given the city li, takes all the information about the actions in the city card.
-        Returns all the actions as a list of dicts.
-        """
-        actions = []
-        action = {}
-        for action_span in city_li.find(class_="action").find_all("span"):
-            score_class_name = action_span['class'][0]
-            match = self.action_regex.match(score_class_name)
-            if match:
-                span_type = match.group(1)
-                action_name = match.group(2)
-
-                # TODO Avoid mutability
-
-                if span_type == "label":
-                    # TODO review where the 'All' (next to Overall) come from and replace it by nothing!
-                    label = action_span.text.replace("All", "").strip() if action_span.text else '-'
-                    action.update({'label': label})
-                elif span_type == "rating":
-                    rating_percent = action_span.span.attrs["style"].replace("width:", "").replace("%", "")
-                    rating_percent = float(rating_percent) if rating_percent.isnumeric() else '-'
-                    action.update({'rating': action_span.text.strip() or '-', 'rating_percent': rating_percent})
-                    actions.append(action)
-                    action = {}
-
-        return actions
-
-    def get_city_attributes(self, city_li):
-        """
-        Given the city li, takes all the information about the attributes in the city card.
-        Returns all the attributes as a list of dicts.
-        """
-        attributes = []
-        attribute = {}
-        for span in city_li.find(class_="attributes").find_all("span", class_="element"):
-            position = span['class'][1]
-            attribute_element_scrapper = AttributeElementScrapper(position)
-            attribute.update(attribute_element_scrapper.get_info(span))
-        return attributes
