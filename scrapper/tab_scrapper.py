@@ -98,7 +98,6 @@ class CostOfLivingTabScrapper(TabScrapper):
         self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
         self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
         self.tab_cost_of_living = self.tab_scroller.find("div", class_="tab editable tab-cost-of-living double-width")
-        # print(f'tab-cost-of-living: {self.tab_cost_of_living.prettify()}')
 
     def get_information(self):
         list_of_keys = []
@@ -179,27 +178,25 @@ class WeatherTabScrapper(TabScrapper):
 
         return weather_data
 
-# class PhotosTabScrapper(TabScrapper):
-#     def __init__(self, soup_object):
-#         super().__init__(soup_object)
-#         # self.tabs_dict = tabs_dict
-#         # self.scores_tab_path = "https://nomadlist.com" + self.tabs_dict['Photos']
-#         self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-#         self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-#         self.tab_weather = self.tab_scroller.find("div", class_="tab tab-weather")
-#         self.climate_table = self.tab_weather.find("table", class_="climate")
-#
-#     def get_information(self):
-#         weather_data = []
-#         table_body = self.climate_table
-#
-#         rows = table_body.find_all('tr')
-#         for row in rows:
-#             cols = row.find_all('td')
-#             cols = [ele.text.strip() for ele in cols]
-#             weather_data.append([ele for ele in cols if ele])  # Get rid of empty values
-#
-#         return weather_data
+
+class PhotosTabScrapper(TabScrapper):
+    def __init__(self, soup_object):
+        super().__init__(soup_object)
+        # self.tabs_dict = tabs_dict
+        # self.scores_tab_path = "https://nomadlist.com" + self.tabs_dict['Photos']
+        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
+        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
+        self.tab_photos = self.tab_scroller.find("div", class_="tab tab-photos")
+        # print(f'tab_photos: {self.tab_photos.prettify()}')
+
+    def get_information(self):
+        list_of_photos = []
+        for photo_element in self.tab_photos.find_all("div", class_="photo-column"):
+            for photo_url_element in photo_element.find_all("img", class_="lazyload"):
+                photos_urls = photo_url_element.attrs["data-src"]
+                list_of_photos.append(photos_urls)
+
+        return list_of_photos
 
 
 # TODO RemoteJobs?, Reviews?, Photos?
@@ -229,6 +226,9 @@ def main():
 
     weather_tab_scrapper_object = WeatherTabScrapper(nomadlist_lisbon_soup)
     print(weather_tab_scrapper_object.get_information())
+
+    photos_tab_scrapper_object = PhotosTabScrapper(nomadlist_lisbon_soup)
+    print(photos_tab_scrapper_object.get_information())
 
 
 if __name__ == "__main__":
