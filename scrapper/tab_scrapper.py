@@ -6,7 +6,7 @@ class TabScrapper:
     def __init__(self, soup_object):
         self.soup_object = soup_object
         self.div_tabs = self.soup_object.find("div", class_="tabs").find("div", class_="ul")
-        # print(f'ul: {self.ul.prettify()}')
+        # print(f'div_tabs: {self.div_tabs.prettify()}')
 
     @staticmethod
     def tab_name(tab):
@@ -23,15 +23,15 @@ class TabScrapper:
 
     def get_information(self):
         tabs_dict = {}
-        for tab_element in self.ul.find_all("h2", class_="li active"):
-            tab_title_element = tab_element.find("a")  # , title="Lisbon City Scores"
+        for tab_element in self.div_tabs.find_all("h2", class_="li active"):
+            tab_title_element = tab_element.find("a")
             tab_title = tab_title_element.get_text(strip=True)
             tab_link = tab_title_element["href"]
 
             tabs_dict[tab_title] = tab_link
 
-        for tab_element in self.ul.find_all("h2", class_="li"):
-            tab_title_element = tab_element.find("a").get_text(strip=True)
+        for tab_element in self.div_tabs.find_all("h2", class_="li"):
+            tab_title_element = tab_element.find("a")
             tab_title = tab_title_element.get_text(strip=True)
             tab_link = tab_title_element["href"]
 
@@ -120,7 +120,7 @@ class ProsAndConsTabScrapper(TabScrapper):
     def __init__(self, soup_object):
         super().__init__(soup_object)
         # self.tabs_dict = tabs_dict
-        # self.scores_tab_path = "https://nomadlist.com" + self.tabs_dict['Cost of Living']
+        # self.scores_tab_path = "https://nomadlist.com" + self.tabs_dict['Pros and Cons']
         self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
         self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
         self.tab_pros_cons = self.tab_scroller.find("div", class_="tab tab-pros-cons")
@@ -142,7 +142,7 @@ class ReviewsTabScrapper(TabScrapper):
     def __init__(self, soup_object):
         super().__init__(soup_object)
         # self.tabs_dict = tabs_dict
-        # self.scores_tab_path = "https://nomadlist.com" + self.tabs_dict['Cost of Living']
+        # self.scores_tab_path = "https://nomadlist.com" + self.tabs_dict['Reviews']
         self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
         self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
         self.tab_reviews = self.tab_scroller.find("div", class_="tab tab-reviews")
@@ -161,7 +161,7 @@ class WeatherTabScrapper(TabScrapper):
     def __init__(self, soup_object):
         super().__init__(soup_object)
         # self.tabs_dict = tabs_dict
-        # self.scores_tab_path = "https://nomadlist.com" + self.tabs_dict['Cost of Living']
+        # self.scores_tab_path = "https://nomadlist.com" + self.tabs_dict['Weather']
         self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
         self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
         self.tab_weather = self.tab_scroller.find("div", class_="tab tab-weather")
@@ -178,6 +178,28 @@ class WeatherTabScrapper(TabScrapper):
             weather_data.append([ele for ele in cols if ele])  # Get rid of empty values
 
         return weather_data
+
+# class PhotosTabScrapper(TabScrapper):
+#     def __init__(self, soup_object):
+#         super().__init__(soup_object)
+#         # self.tabs_dict = tabs_dict
+#         # self.scores_tab_path = "https://nomadlist.com" + self.tabs_dict['Photos']
+#         self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
+#         self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
+#         self.tab_weather = self.tab_scroller.find("div", class_="tab tab-weather")
+#         self.climate_table = self.tab_weather.find("table", class_="climate")
+#
+#     def get_information(self):
+#         weather_data = []
+#         table_body = self.climate_table
+#
+#         rows = table_body.find_all('tr')
+#         for row in rows:
+#             cols = row.find_all('td')
+#             cols = [ele.text.strip() for ele in cols]
+#             weather_data.append([ele for ele in cols if ele])  # Get rid of empty values
+#
+#         return weather_data
 
 
 # TODO RemoteJobs?, Reviews?, Photos?
