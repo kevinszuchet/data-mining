@@ -2,8 +2,8 @@ import re
 from scrapper.tab_scrapper import *
 from logger import Logger
 
-# TODO: is it ok if I change a method from static to non-static because of the logger?
 
+# TODO: is it ok if I change a method from static to non-static because of the logger?
 
 class CityScrapper:
     """Class that knows how to get data from each city card."""
@@ -51,12 +51,17 @@ class CityScrapper:
         city_details_soup = BeautifulSoup(city_details_html, "html.parser")
         text = city_details_soup.find(class_="text")
 
+        self._logger.debug(f"City details - <div class=\"text\">...<div>: {text}")
+
         if not text:
             return
 
-        tas_tags = city_details_soup.find("div", class_="tabs").find("div", class_="ul").find_all("h2", class_="li")
+        tabs = city_details_soup.find("div", class_="tabs").find("div", class_="ul").find_all("h2", class_="li")
+        self._logger.debug(f"City details - Tabs: {tabs}")
         tabs_information = {TabScrapper.tab_name(tab): self._get_tab_information(tab, city_details_soup)
-                            for tab in tas_tags if TabScrapper.valid_tab(tab)}
+                            for tab in tabs if TabScrapper.valid_tab(tab)}
+
+        self._logger.info("All tabs information was fetched!")
 
         return {
             'city': text.h1.text if text.h1 else "-",
