@@ -122,13 +122,7 @@ class PhotosTabScrapper(TabScrapper):
         self._tab = self._tab_scroller.find("div", class_="tab tab-photos")
 
     def get_information(self):
-        list_of_photos = []
-        for photo_element in self._tab.find_all("div", class_="photo-column"):
-            for photo_url_element in photo_element.find_all("img", class_="lazyload"):
-                photos_urls = photo_url_element.attrs["data-src"]
-                list_of_photos.append(photos_urls)
-
-        return list_of_photos
+        return [photo.attrs["data-src"] for photo in self._tab.find_all("img", class_="lazyload")]
 
 
 class NearTabScrapper(TabScrapper):
