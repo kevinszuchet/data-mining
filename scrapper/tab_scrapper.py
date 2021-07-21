@@ -28,18 +28,18 @@ class TabScrapper:
 
 
 class KeyValueTabScrapper(TabScrapper):
-    def _get_key(self, td):
-        return td.get_text(strip=True)
+    def _get_key(self, key_column):
+        return key_column.get_text(strip=True)
 
-    def _get_value(self, td):
-        return td.text
+    def _get_value(self, value_column):
+        return value_column.text
 
     def get_information(self):
         info_dict = {}
         table = self._tab.find('table', class_='details')
-        for tr in table.find_all('tr'):
-            key_td, value_td = tr.find(class_='key'), tr.find(class_='value')
-            key, value = self._get_key(key_td), self._get_value(value_td)
+        for row in table.find_all('tr'):
+            row_key, row_value = row.find(class_='key'), row.find(class_='value')
+            key, value = self._get_key(row_key), self._get_value(row_value)
             info_dict.update({key: value})
 
         return info_dict
@@ -50,9 +50,9 @@ class ScoresTabScrapper(KeyValueTabScrapper):
         super().__init__(soup)
         self._tab = self._tab_scroller.find("div", class_="tab tab-ranking show")
 
-    def _get_value(self, td):
+    def _get_value(self, value_column):
         # TODO get Rating Value, Best Rating, and Width
-        return td.div.div.text
+        return value_column.div.div.text
 
 
 class DigitalNomadGuideTabScrapper(KeyValueTabScrapper):
