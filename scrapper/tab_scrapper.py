@@ -96,6 +96,7 @@ class ReviewsTabScrapper(TabScrapper):
         return [review_element.text for review_element in self._tab.find_all("div", class_="review-text")]
 
 
+# TODO dict like {(attribute, month): { text, value }}
 class WeatherTabScrapper(TabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
