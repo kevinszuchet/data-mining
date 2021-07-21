@@ -125,210 +125,30 @@ class PhotosTabScrapper(TabScrapper):
         return [photo.attrs["data-src"] for photo in self._tab.find_all("img", class_="lazyload")]
 
 
-class NearTabScrapper(TabScrapper):
+class CityGridTabScrapper(TabScrapper):
+    def get_information(self):
+        grid = self._tab.find("div", class_="details grid show")
+        cities = grid.find_all("li", attrs={'data-type': 'city'})
+        # TODO fix encoding
+        return [city.find("div", class_="text").h3.a.text for city in cities]
+
+
+class NearTabScrapper(CityGridTabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
         self._tab = self._tab_scroller.find("div", class_="tab tab-near")
 
-    def get_information(self):
-        info_of_nearby_cities = {}
 
-        for near_element in self._tab.find("div", class_="details grid show"):  # find_all("li data-type=city")
-            city = near_element.find("div", class_="text").h3.a.text
-
-            country = near_element.find("div", class_="text").h4.a.text
-
-            description = near_element.find("p", class_="description").text
-
-            overall_title = near_element.find("span", class_="label-main-score label").text
-            overall_style_extract = near_element.find("span", class_=re.compile("rating-main-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            overall_style_extract2 = overall_style_extract["style"]
-            overall_style = overall_style_extract2.split(':', 1)[-1]
-            overall = (overall_title, overall_style)
-
-            cost_title = near_element.find("span", class_="label-cost-score label").text.rstrip("\xa0")
-            cost_style_extract = near_element.find("span", class_=re.compile("rating-cost-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            cost_style_extract2 = cost_style_extract["style"]
-            cost_style = cost_style_extract2.split(':', 1)[-1]
-            cost = (cost_title, cost_style)
-
-            internet_title = near_element.find("span", class_="label-internet-score label").text.rstrip("\xa0")
-            internet_style_extract = near_element.find("span", class_=re.compile("rating-internet-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            internet_style_extract2 = internet_style_extract["style"]
-            internet_style = internet_style_extract2.split(':', 1)[-1]
-            internet = (internet_title, internet_style)
-
-            fun_title = near_element.find("span", class_="label-fun-score label").text.rstrip("\xa0")
-            fun_style_extract = near_element.find("span", class_=re.compile("rating-fun-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            fun_style_extract2 = fun_style_extract["style"]
-            fun_style = fun_style_extract2.split(':', 1)[-1]
-            fun = (fun_title, fun_style)
-
-            safety_title = near_element.find("span", class_="label-safety-score label").text.rstrip("\xa0")
-            safety_style_extract = near_element.find("span", class_=re.compile("rating-safety-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            safety_style_extract2 = safety_style_extract["style"]
-            safety_style = safety_style_extract2.split(':', 1)[-1]
-            safety = (safety_title, safety_style)
-
-            weather_emoji = near_element.find("span", class_="weather-emoji").text
-            temperature = near_element.find("span", class_=re.compile("temperature")) \
-                .find('span', class_="value unit metric").text
-            weather = f'{weather_emoji} {temperature}C'
-
-            air_quality = near_element.find("span", class_="air_quality").text
-
-            travel_distance = near_element.find("span", class_="element top-left").text
-
-            price = near_element.find("span", class_="element bottom-right short_term_cost cost switchable").text
-
-            list_of_info_for_each_city = [country, description, overall, cost, internet, fun, safety, weather,
-                                          air_quality, travel_distance, price]
-
-            info_of_nearby_cities[city] = list_of_info_for_each_city
-
-        return info_of_nearby_cities
-
-
-class NextTabScrapper(TabScrapper):
+class NextTabScrapper(CityGridTabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
         self._tab = self._tab_scroller.find("div", class_="tab tab-next")
 
-    def get_information(self):
-        info_of_nearby_cities = {}
 
-        for near_element in self._tab.find("div", class_="details grid show"):  # find_all("li data-type=city")
-            city = near_element.find("div", class_="text").h3.a.text
-
-            country = near_element.find("div", class_="text").h4.a.text
-
-            description = near_element.find("p", class_="description").text
-
-            overall_title = near_element.find("span", class_="label-main-score label").text
-            overall_style_extract = near_element.find("span", class_=re.compile("rating-main-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            overall_style_extract2 = overall_style_extract["style"]
-            overall_style = overall_style_extract2.split(':', 1)[-1]
-            overall = (overall_title, overall_style)
-
-            cost_title = near_element.find("span", class_="label-cost-score label").text.rstrip("\xa0")
-            cost_style_extract = near_element.find("span", class_=re.compile("rating-cost-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            cost_style_extract2 = cost_style_extract["style"]
-            cost_style = cost_style_extract2.split(':', 1)[-1]
-            cost = (cost_title, cost_style)
-
-            internet_title = near_element.find("span", class_="label-internet-score label").text.rstrip("\xa0")
-            internet_style_extract = near_element.find("span", class_=re.compile("rating-internet-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            internet_style_extract2 = internet_style_extract["style"]
-            internet_style = internet_style_extract2.split(':', 1)[-1]
-            internet = (internet_title, internet_style)
-
-            fun_title = near_element.find("span", class_="label-fun-score label").text.rstrip("\xa0")
-            fun_style_extract = near_element.find("span", class_=re.compile("rating-fun-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            fun_style_extract2 = fun_style_extract["style"]
-            fun_style = fun_style_extract2.split(':', 1)[-1]
-            fun = (fun_title, fun_style)
-
-            safety_title = near_element.find("span", class_="label-safety-score label").text.rstrip("\xa0")
-            safety_style_extract = near_element.find("span", class_=re.compile("rating-safety-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            safety_style_extract2 = safety_style_extract["style"]
-            safety_style = safety_style_extract2.split(':', 1)[-1]
-            safety = (safety_title, safety_style)
-
-            weather_emoji = near_element.find("span", class_="weather-emoji").text
-            temperature = near_element.find("span", class_=re.compile("temperature")) \
-                .find('span', class_="value unit metric").text
-            weather = f'{weather_emoji} {temperature}C'
-
-            air_quality = near_element.find("span", class_="air_quality").text
-
-            travel_distance = near_element.find("span", class_="element top-left").text
-
-            price = near_element.find("span", class_="element bottom-right short_term_cost cost switchable").text
-
-            list_of_info_for_each_city = [country, description, overall, cost, internet, fun, safety, weather,
-                                          air_quality, travel_distance, price]
-
-            info_of_nearby_cities[city] = list_of_info_for_each_city
-
-        return info_of_nearby_cities
-
-
-class SimilarTabScrapper(TabScrapper):
+class SimilarTabScrapper(CityGridTabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
         self._tab = self._tab_scroller.find("div", class_="tab tab-similar")
-
-    def get_information(self):
-        info_of_nearby_cities = {}
-
-        for near_element in self._tab.find("div", class_="details grid show"):  # find_all("li data-type=city")
-            # print(f'near_element : {near_element.prettify()}')
-            city = near_element.find("div", class_="text").h3.a.text
-
-            description = near_element.find("p", class_="description").text
-
-            overall_title = near_element.find("span", class_="label-main-score label").text
-            overall_style_extract = near_element.find("span", class_=re.compile("rating-main-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            overall_style_extract2 = overall_style_extract["style"]
-            overall_style = overall_style_extract2.split(':', 1)[-1]
-            overall = (overall_title, overall_style)
-
-            cost_title = near_element.find("span", class_="label-cost-score label").text.rstrip("\xa0")
-            cost_style_extract = near_element.find("span", class_=re.compile("rating-cost-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            cost_style_extract2 = cost_style_extract["style"]
-            cost_style = cost_style_extract2.split(':', 1)[-1]
-            cost = (cost_title, cost_style)
-
-            internet_title = near_element.find("span", class_="label-internet-score label").text.rstrip("\xa0")
-            internet_style_extract = near_element.find("span", class_=re.compile("rating-internet-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            internet_style_extract2 = internet_style_extract["style"]
-            internet_style = internet_style_extract2.split(':', 1)[-1]
-            internet = (internet_title, internet_style)
-
-            fun_title = near_element.find("span", class_="label-fun-score label").text.rstrip("\xa0")
-            fun_style_extract = near_element.find("span", class_=re.compile("rating-fun-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            fun_style_extract2 = fun_style_extract["style"]
-            fun_style = fun_style_extract2.split(':', 1)[-1]
-            fun = (fun_title, fun_style)
-
-            safety_title = near_element.find("span", class_="label-safety-score label").text.rstrip("\xa0")
-            safety_style_extract = near_element.find("span", class_=re.compile("rating-safety-score rating ")) \
-                .find('span', attrs={'class': 'filling'})
-            safety_style_extract2 = safety_style_extract["style"]
-            safety_style = safety_style_extract2.split(':', 1)[-1]
-            safety = (safety_title, safety_style)
-
-            weather_emoji = near_element.find("span", class_="weather-emoji").text
-            temperature = near_element.find("span", class_=re.compile("temperature")) \
-                .find('span', class_="value unit metric").text
-            weather = f'{weather_emoji} {temperature}C'
-
-            air_quality = near_element.find("span", class_="air_quality").text
-
-            travel_distance = near_element.find("span", class_="element top-left").text
-
-            price = near_element.find("span", class_="element bottom-right short_term_cost cost switchable").text
-
-            list_of_info_for_each_city = [description, overall, cost, internet, fun, safety, weather,
-                                          air_quality, travel_distance, price]
-
-            info_of_nearby_cities[city] = list_of_info_for_each_city
-
-        return info_of_nearby_cities
 
 
 def main():
