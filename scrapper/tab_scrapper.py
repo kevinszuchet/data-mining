@@ -93,13 +93,7 @@ class ReviewsTabScrapper(TabScrapper):
         self._tab = self._tab_scroller.find("div", class_="tab tab-reviews")
 
     def get_information(self):
-        list_of_reviews = []
-
-        for review_element in self._tab.find_all("div", class_="review-text"):
-            review_text = review_element.text
-            list_of_reviews.append(review_text)
-
-        return list_of_reviews
+        return [review_element.text for review_element in self._tab.find_all("div", class_="review-text")]
 
 
 class WeatherTabScrapper(TabScrapper):
