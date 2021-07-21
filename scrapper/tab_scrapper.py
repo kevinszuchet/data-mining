@@ -5,9 +5,9 @@ from logger import Logger
 
 
 class TabScrapper:
-    def __init__(self, soup_object):
-        self.soup_object = soup_object
-        self.div_tabs = self.soup_object.find("div", class_="tabs").find("div", class_="ul")
+    def __init__(self, soup):
+        container = soup.find("div", class_="tab-scroller-container")
+        self.tab_scroller = container.find("div", class_="tab-scroller")
         self._logger = Logger().logger
 
     @staticmethod
@@ -24,31 +24,13 @@ class TabScrapper:
             return isinstance(dynamic_tab_scrapper, TabScrapper)
 
     def get_information(self):
-        tabs_dict = {}
-
-        for tab_element in self.div_tabs.find_all("h2", class_="li active"):
-            tab_title_element = tab_element.find("a")
-            tab_title = tab_title_element.get_text(strip=True)
-            tab_link = tab_title_element["href"]
-
-            tabs_dict[tab_title] = tab_link
-
-        for tab_element in self.div_tabs.find_all("h2", class_="li"):
-            tab_title_element = tab_element.find("a")
-            tab_title = tab_title_element.get_text(strip=True)
-            tab_link = tab_title_element["href"]
-
-            tabs_dict[tab_title] = tab_link
-
-        return tabs_dict
+        pass
 
 
 class ScoresTabScrapper(TabScrapper):
-    def __init__(self, soup_object):
-        super().__init__(soup_object)
-        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-        self.tab_ranking = self.tab_scroller.find("div", class_="tab tab-ranking show")
+    def __init__(self, soup):
+        super().__init__(soup)
+        self.tab = self.tab_scroller.find("div", class_="tab tab-ranking show")
 
     def get_information(self):
         list_of_keys = []
@@ -68,11 +50,9 @@ class ScoresTabScrapper(TabScrapper):
 
 
 class DigitalNomadGuideTabScrapper(TabScrapper):
-    def __init__(self, soup_object):
-        super().__init__(soup_object)
-        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-        self.tab_digital_nomad_guide = self.tab_scroller.find("div", class_="tab tab-digital-nomad-guide")
+    def __init__(self, soup):
+        super().__init__(soup)
+        self.tab = self.tab_scroller.find("div", class_="tab tab-digital-nomad-guide")
 
     def get_information(self):
         list_of_keys = []
@@ -92,11 +72,9 @@ class DigitalNomadGuideTabScrapper(TabScrapper):
 
 
 class CostOfLivingTabScrapper(TabScrapper):
-    def __init__(self, soup_object):
-        super().__init__(soup_object)
-        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-        self.tab_cost_of_living = self.tab_scroller.find("div", class_="tab editable tab-cost-of-living double-width")
+    def __init__(self, soup):
+        super().__init__(soup)
+        self.tab = self.tab_scroller.find("div", class_="tab editable tab-cost-of-living double-width")
 
     def get_information(self):
         list_of_keys = []
@@ -116,11 +94,9 @@ class CostOfLivingTabScrapper(TabScrapper):
 
 
 class ProsAndConsTabScrapper(TabScrapper):
-    def __init__(self, soup_object):
-        super().__init__(soup_object)
-        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-        self.tab_pros_cons = self.tab_scroller.find("div", class_="tab tab-pros-cons")
+    def __init__(self, soup):
+        super().__init__(soup)
+        self.tab = self.tab_scroller.find("div", class_="tab tab-pros-cons")
 
     def get_information(self):
         list_of_pros_cons = []
@@ -137,11 +113,9 @@ class ProsAndConsTabScrapper(TabScrapper):
 
 
 class ReviewsTabScrapper(TabScrapper):
-    def __init__(self, soup_object):
-        super().__init__(soup_object)
-        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-        self.tab_reviews = self.tab_scroller.find("div", class_="tab tab-reviews")
+    def __init__(self, soup):
+        super().__init__(soup)
+        self.tab = self.tab_scroller.find("div", class_="tab tab-reviews")
 
     def get_information(self):
         list_of_reviews = []
@@ -154,11 +128,9 @@ class ReviewsTabScrapper(TabScrapper):
 
 
 class WeatherTabScrapper(TabScrapper):
-    def __init__(self, soup_object):
-        super().__init__(soup_object)
-        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-        self.tab_weather = self.tab_scroller.find("div", class_="tab tab-weather")
+    def __init__(self, soup):
+        super().__init__(soup)
+        self.tab = self.tab_scroller.find("div", class_="tab tab-weather")
         self.climate_table = self.tab_weather.find("table", class_="climate")
 
     def get_information(self):
@@ -175,11 +147,9 @@ class WeatherTabScrapper(TabScrapper):
 
 
 class PhotosTabScrapper(TabScrapper):
-    def __init__(self, soup_object):
-        super().__init__(soup_object)
-        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-        self.tab_photos = self.tab_scroller.find("div", class_="tab tab-photos")
+    def __init__(self, soup):
+        super().__init__(soup)
+        self.tab = self.tab_scroller.find("div", class_="tab tab-photos")
 
     def get_information(self):
         list_of_photos = []
@@ -192,16 +162,14 @@ class PhotosTabScrapper(TabScrapper):
 
 
 class NearTabScrapper(TabScrapper):
-    def __init__(self, soup_object):
-        super().__init__(soup_object)
-        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-        self.tab_near = self.tab_scroller.find("div", class_="tab tab-near")
+    def __init__(self, soup):
+        super().__init__(soup)
+        self.tab = self.tab_scroller.find("div", class_="tab tab-near")
 
     def get_information(self):
         info_of_nearby_cities = {}
 
-        for near_element in self.tab_near.find("div", class_="details grid show"):    # find_all("li data-type=city")
+        for near_element in self.tab_near.find("div", class_="details grid show"):  # find_all("li data-type=city")
             city = near_element.find("div", class_="text").h3.a.text
 
             country = near_element.find("div", class_="text").h4.a.text
@@ -209,42 +177,42 @@ class NearTabScrapper(TabScrapper):
             description = near_element.find("p", class_="description").text
 
             overall_title = near_element.find("span", class_="label-main-score label").text
-            overall_style_extract = near_element.find("span", class_=re.compile("rating-main-score rating "))\
+            overall_style_extract = near_element.find("span", class_=re.compile("rating-main-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             overall_style_extract2 = overall_style_extract["style"]
             overall_style = overall_style_extract2.split(':', 1)[-1]
             overall = (overall_title, overall_style)
 
             cost_title = near_element.find("span", class_="label-cost-score label").text.rstrip("\xa0")
-            cost_style_extract = near_element.find("span", class_=re.compile("rating-cost-score rating "))\
+            cost_style_extract = near_element.find("span", class_=re.compile("rating-cost-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             cost_style_extract2 = cost_style_extract["style"]
             cost_style = cost_style_extract2.split(':', 1)[-1]
             cost = (cost_title, cost_style)
 
             internet_title = near_element.find("span", class_="label-internet-score label").text.rstrip("\xa0")
-            internet_style_extract = near_element.find("span", class_=re.compile("rating-internet-score rating "))\
+            internet_style_extract = near_element.find("span", class_=re.compile("rating-internet-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             internet_style_extract2 = internet_style_extract["style"]
             internet_style = internet_style_extract2.split(':', 1)[-1]
             internet = (internet_title, internet_style)
 
             fun_title = near_element.find("span", class_="label-fun-score label").text.rstrip("\xa0")
-            fun_style_extract = near_element.find("span", class_=re.compile("rating-fun-score rating "))\
+            fun_style_extract = near_element.find("span", class_=re.compile("rating-fun-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             fun_style_extract2 = fun_style_extract["style"]
             fun_style = fun_style_extract2.split(':', 1)[-1]
             fun = (fun_title, fun_style)
 
             safety_title = near_element.find("span", class_="label-safety-score label").text.rstrip("\xa0")
-            safety_style_extract = near_element.find("span", class_=re.compile("rating-safety-score rating "))\
+            safety_style_extract = near_element.find("span", class_=re.compile("rating-safety-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             safety_style_extract2 = safety_style_extract["style"]
             safety_style = safety_style_extract2.split(':', 1)[-1]
             safety = (safety_title, safety_style)
 
             weather_emoji = near_element.find("span", class_="weather-emoji").text
-            temperature = near_element.find("span", class_=re.compile("temperature"))\
+            temperature = near_element.find("span", class_=re.compile("temperature")) \
                 .find('span', class_="value unit metric").text
             weather = f'{weather_emoji} {temperature}C'
 
@@ -263,16 +231,14 @@ class NearTabScrapper(TabScrapper):
 
 
 class NextTabScrapper(TabScrapper):
-    def __init__(self, soup_object):
-        super().__init__(soup_object)
-        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-        self.tab_next = self.tab_scroller.find("div", class_="tab tab-next")
+    def __init__(self, soup):
+        super().__init__(soup)
+        self.tab = self.tab_scroller.find("div", class_="tab tab-next")
 
     def get_information(self):
         info_of_nearby_cities = {}
 
-        for near_element in self.tab_next.find("div", class_="details grid show"):    # find_all("li data-type=city")
+        for near_element in self.tab_next.find("div", class_="details grid show"):  # find_all("li data-type=city")
             city = near_element.find("div", class_="text").h3.a.text
 
             country = near_element.find("div", class_="text").h4.a.text
@@ -280,42 +246,42 @@ class NextTabScrapper(TabScrapper):
             description = near_element.find("p", class_="description").text
 
             overall_title = near_element.find("span", class_="label-main-score label").text
-            overall_style_extract = near_element.find("span", class_=re.compile("rating-main-score rating "))\
+            overall_style_extract = near_element.find("span", class_=re.compile("rating-main-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             overall_style_extract2 = overall_style_extract["style"]
             overall_style = overall_style_extract2.split(':', 1)[-1]
             overall = (overall_title, overall_style)
 
             cost_title = near_element.find("span", class_="label-cost-score label").text.rstrip("\xa0")
-            cost_style_extract = near_element.find("span", class_=re.compile("rating-cost-score rating "))\
+            cost_style_extract = near_element.find("span", class_=re.compile("rating-cost-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             cost_style_extract2 = cost_style_extract["style"]
             cost_style = cost_style_extract2.split(':', 1)[-1]
             cost = (cost_title, cost_style)
 
             internet_title = near_element.find("span", class_="label-internet-score label").text.rstrip("\xa0")
-            internet_style_extract = near_element.find("span", class_=re.compile("rating-internet-score rating "))\
+            internet_style_extract = near_element.find("span", class_=re.compile("rating-internet-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             internet_style_extract2 = internet_style_extract["style"]
             internet_style = internet_style_extract2.split(':', 1)[-1]
             internet = (internet_title, internet_style)
 
             fun_title = near_element.find("span", class_="label-fun-score label").text.rstrip("\xa0")
-            fun_style_extract = near_element.find("span", class_=re.compile("rating-fun-score rating "))\
+            fun_style_extract = near_element.find("span", class_=re.compile("rating-fun-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             fun_style_extract2 = fun_style_extract["style"]
             fun_style = fun_style_extract2.split(':', 1)[-1]
             fun = (fun_title, fun_style)
 
             safety_title = near_element.find("span", class_="label-safety-score label").text.rstrip("\xa0")
-            safety_style_extract = near_element.find("span", class_=re.compile("rating-safety-score rating "))\
+            safety_style_extract = near_element.find("span", class_=re.compile("rating-safety-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             safety_style_extract2 = safety_style_extract["style"]
             safety_style = safety_style_extract2.split(':', 1)[-1]
             safety = (safety_title, safety_style)
 
             weather_emoji = near_element.find("span", class_="weather-emoji").text
-            temperature = near_element.find("span", class_=re.compile("temperature"))\
+            temperature = near_element.find("span", class_=re.compile("temperature")) \
                 .find('span', class_="value unit metric").text
             weather = f'{weather_emoji} {temperature}C'
 
@@ -334,58 +300,56 @@ class NextTabScrapper(TabScrapper):
 
 
 class SimilarTabScrapper(TabScrapper):
-    def __init__(self, soup_object):
-        super().__init__(soup_object)
-        self.div_tabs_scroll_cont = self.soup_object.find("div", class_="tab-scroller-container")
-        self.tab_scroller = self.div_tabs_scroll_cont.find("div", class_="tab-scroller")
-        self.tab_similar = self.tab_scroller.find("div", class_="tab tab-similar")
+    def __init__(self, soup):
+        super().__init__(soup)
+        self.tab = self.tab_scroller.find("div", class_="tab tab-similar")
 
     def get_information(self):
         info_of_nearby_cities = {}
 
-        for near_element in self.tab_similar.find("div", class_="details grid show"):    # find_all("li data-type=city")
+        for near_element in self.tab_similar.find("div", class_="details grid show"):  # find_all("li data-type=city")
             # print(f'near_element : {near_element.prettify()}')
             city = near_element.find("div", class_="text").h3.a.text
 
             description = near_element.find("p", class_="description").text
 
             overall_title = near_element.find("span", class_="label-main-score label").text
-            overall_style_extract = near_element.find("span", class_=re.compile("rating-main-score rating "))\
+            overall_style_extract = near_element.find("span", class_=re.compile("rating-main-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             overall_style_extract2 = overall_style_extract["style"]
             overall_style = overall_style_extract2.split(':', 1)[-1]
             overall = (overall_title, overall_style)
 
             cost_title = near_element.find("span", class_="label-cost-score label").text.rstrip("\xa0")
-            cost_style_extract = near_element.find("span", class_=re.compile("rating-cost-score rating "))\
+            cost_style_extract = near_element.find("span", class_=re.compile("rating-cost-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             cost_style_extract2 = cost_style_extract["style"]
             cost_style = cost_style_extract2.split(':', 1)[-1]
             cost = (cost_title, cost_style)
 
             internet_title = near_element.find("span", class_="label-internet-score label").text.rstrip("\xa0")
-            internet_style_extract = near_element.find("span", class_=re.compile("rating-internet-score rating "))\
+            internet_style_extract = near_element.find("span", class_=re.compile("rating-internet-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             internet_style_extract2 = internet_style_extract["style"]
             internet_style = internet_style_extract2.split(':', 1)[-1]
             internet = (internet_title, internet_style)
 
             fun_title = near_element.find("span", class_="label-fun-score label").text.rstrip("\xa0")
-            fun_style_extract = near_element.find("span", class_=re.compile("rating-fun-score rating "))\
+            fun_style_extract = near_element.find("span", class_=re.compile("rating-fun-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             fun_style_extract2 = fun_style_extract["style"]
             fun_style = fun_style_extract2.split(':', 1)[-1]
             fun = (fun_title, fun_style)
 
             safety_title = near_element.find("span", class_="label-safety-score label").text.rstrip("\xa0")
-            safety_style_extract = near_element.find("span", class_=re.compile("rating-safety-score rating "))\
+            safety_style_extract = near_element.find("span", class_=re.compile("rating-safety-score rating ")) \
                 .find('span', attrs={'class': 'filling'})
             safety_style_extract2 = safety_style_extract["style"]
             safety_style = safety_style_extract2.split(':', 1)[-1]
             safety = (safety_title, safety_style)
 
             weather_emoji = near_element.find("span", class_="weather-emoji").text
-            temperature = near_element.find("span", class_=re.compile("temperature"))\
+            temperature = near_element.find("span", class_=re.compile("temperature")) \
                 .find('span', class_="value unit metric").text
             weather = f'{weather_emoji} {temperature}C'
 
