@@ -11,7 +11,8 @@ from concurrent.futures import as_completed
 from logger import Logger
 
 
-# TODO handle errors + logging
+# TODO handle errors
+# TODO Adapter for Selenium Web Drivers + Context Manager
 
 
 class NomadListScrapper:
