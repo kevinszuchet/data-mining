@@ -56,15 +56,18 @@ class CityScrapper:
         if not text:
             return
 
+        city = text.h1.text if text.h1 else "-"
+        country = text.h2.text if text.h2 else "-"
+
         tabs = city_details_soup.find("div", class_="tabs").find("div", class_="ul").find_all("h2", class_="li")
         self._logger.debug(f"City details - Tabs: {tabs}")
         tabs_information = {TabScrapper.tab_name(tab): self._get_tab_information(tab, city_details_soup)
                             for tab in tabs if TabScrapper.valid_tab(tab)}
 
-        self._logger.info("All tabs information was fetched!")
+        self._logger.info(f"All the information about {city}, {country} was fetched!")
 
         return {
-            'city': text.h1.text if text.h1 else "-",
-            'country': text.h2.text if text.h2 else "-",
+            'city': city,
+            'country': country,
             **tabs_information
         }
