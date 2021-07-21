@@ -1,12 +1,14 @@
 from bs4 import BeautifulSoup
 import requests as rq
 import re
+from logger import Logger
 
 
 class TabScrapper:
     def __init__(self, soup_object):
         self.soup_object = soup_object
         self.div_tabs = self.soup_object.find("div", class_="tabs").find("div", class_="ul")
+        self._logger = Logger().logger
 
     @staticmethod
     def tab_name(tab):
