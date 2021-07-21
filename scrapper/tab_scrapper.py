@@ -11,17 +11,17 @@ class TabScrapper:
         self._logger = Logger().logger
 
     @staticmethod
-    def tab_name(tab):
+    def get_name(tab):
         return tab.find("a").get_text(strip=True).replace(' ', '')
 
     @staticmethod
-    def valid_tab(tab):
+    def is_valid(tab):
         try:
-            eval(f"{TabScrapper.tab_name(tab)}TabScrapper")
+            dynamic_tab_scrapper = eval(f"{TabScrapper.tab_name(tab)}TabScrapper")
         except NameError:
             return False
         else:
-            return True
+            return isinstance(dynamic_tab_scrapper, TabScrapper)
 
     def get_information(self):
         tabs_dict = {}
