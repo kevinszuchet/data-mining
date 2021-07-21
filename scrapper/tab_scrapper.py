@@ -7,7 +7,7 @@ from logger import Logger
 class TabScrapper:
     def __init__(self, soup):
         container = soup.find("div", class_="tab-scroller-container")
-        self.tab_scroller = container.find("div", class_="tab-scroller")
+        self._tab_scroller = container.find("div", class_="tab-scroller")
         self._logger = Logger().logger
 
     @staticmethod
@@ -27,82 +27,56 @@ class TabScrapper:
         pass
 
 
-class ScoresTabScrapper(TabScrapper):
-    def __init__(self, soup):
-        super().__init__(soup)
-        self.tab = self.tab_scroller.find("div", class_="tab tab-ranking show")
+class KeyValueTabScrapper(TabScrapper):
+    def _get_key(self, td):
+        return td.get_text(strip=True)
+
+    def _get_value(self, td):
+        return td.text
 
     def get_information(self):
-        list_of_keys = []
-        list_of_values = []
+        info_dict = {}
+        table = self._tab.find('table', class_='details')
+        for tr in table.find_all('tr'):
+            key_td, value_td = tr.find(class_='key'), tr.find(class_='value')
+            key, value = self._get_key(key_td), self._get_value(value_td)
+            info_dict.update({key: value})
 
-        for key_element in self.tab_ranking.find_all("td", class_="key"):
-            score_title = key_element.get_text(strip=True)
-            list_of_keys.append(score_title)
-
-        for value_element in self.tab_ranking.find_all("td", class_="value"):
-            score_value = value_element.div.div.text
-            list_of_values.append(score_value)
-
-        scores_tab_info_dict = dict(zip(list_of_keys, list_of_values))
-
-        return scores_tab_info_dict
+        return info_dict
 
 
-class DigitalNomadGuideTabScrapper(TabScrapper):
+class ScoresTabScrapper(KeyValueTabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
-        self.tab = self.tab_scroller.find("div", class_="tab tab-digital-nomad-guide")
+        self._tab = self._tab_scroller.find("div", class_="tab tab-ranking show")
 
-    def get_information(self):
-        list_of_keys = []
-        list_of_values = []
-
-        for key_element in self.tab_digital_nomad_guide.find_all("td", class_="key"):
-            score_title = key_element.get_text(strip=True)
-            list_of_keys.append(score_title)
-
-        for value_element in self.tab_digital_nomad_guide.find_all("td", class_="value"):
-            score_value = value_element.text
-            list_of_values.append(score_value)
-
-        scores_tab_info_dict = dict(zip(list_of_keys, list_of_values))
-
-        return scores_tab_info_dict
+    def _get_value(self, td):
+        # TODO get Rating Value, Best Rating, and Width
+        return td.div.div.text
 
 
-class CostOfLivingTabScrapper(TabScrapper):
+class DigitalNomadGuideTabScrapper(KeyValueTabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
-        self.tab = self.tab_scroller.find("div", class_="tab editable tab-cost-of-living double-width")
+        self._tab = self._tab_scroller.find("div", class_="tab tab-digital-nomad-guide")
 
-    def get_information(self):
-        list_of_keys = []
-        list_of_values = []
 
-        for key_element in self.tab_cost_of_living.find_all("td", class_="key"):
-            cost_of_living_title = key_element.get_text(strip=True)
-            list_of_keys.append(cost_of_living_title)
-
-        for value_element in self.tab_cost_of_living.find_all("td", class_="value"):
-            cost_of_living_value = value_element.text
-            list_of_values.append(cost_of_living_value)
-
-        scores_tab_info_dict = dict(zip(list_of_keys, list_of_values))
-
-        return scores_tab_info_dict
+class CostOfLivingTabScrapper(KeyValueTabScrapper):
+    def __init__(self, soup):
+        super().__init__(soup)
+        self._tab = self._tab_scroller.find("div", class_="tab editable tab-cost-of-living double-width")
 
 
 class ProsAndConsTabScrapper(TabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
-        self.tab = self.tab_scroller.find("div", class_="tab tab-pros-cons")
+        self._tab = self._tab_scroller.find("div", class_="tab tab-pros-cons")
 
     def get_information(self):
         list_of_pros_cons = []
         list_of_pros_list_and_cons_list = []
 
-        for p_element in self.tab_pros_cons.find_all("div"):
+        for p_element in self._tab.find_all("div"):
             for pros_cons_element in p_element.find_all("p"):
                 pros_cons = pros_cons_element.get_text(strip=True)
                 list_of_pros_cons.append(pros_cons)
@@ -115,12 +89,12 @@ class ProsAndConsTabScrapper(TabScrapper):
 class ReviewsTabScrapper(TabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
-        self.tab = self.tab_scroller.find("div", class_="tab tab-reviews")
+        self._tab = self._tab_scroller.find("div", class_="tab tab-reviews")
 
     def get_information(self):
         list_of_reviews = []
 
-        for review_element in self.tab_reviews.find_all("div", class_="review-text"):
+        for review_element in self._tab.find_all("div", class_="review-text"):
             review_text = review_element.text
             list_of_reviews.append(review_text)
 
@@ -130,8 +104,8 @@ class ReviewsTabScrapper(TabScrapper):
 class WeatherTabScrapper(TabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
-        self.tab = self.tab_scroller.find("div", class_="tab tab-weather")
-        self.climate_table = self.tab_weather.find("table", class_="climate")
+        self._tab = self._tab_scroller.find("div", class_="tab tab-weather")
+        self.climate_table = self._tab.find("table", class_="climate")
 
     def get_information(self):
         weather_data = []
@@ -149,11 +123,11 @@ class WeatherTabScrapper(TabScrapper):
 class PhotosTabScrapper(TabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
-        self.tab = self.tab_scroller.find("div", class_="tab tab-photos")
+        self._tab = self._tab_scroller.find("div", class_="tab tab-photos")
 
     def get_information(self):
         list_of_photos = []
-        for photo_element in self.tab_photos.find_all("div", class_="photo-column"):
+        for photo_element in self._tab.find_all("div", class_="photo-column"):
             for photo_url_element in photo_element.find_all("img", class_="lazyload"):
                 photos_urls = photo_url_element.attrs["data-src"]
                 list_of_photos.append(photos_urls)
@@ -164,12 +138,12 @@ class PhotosTabScrapper(TabScrapper):
 class NearTabScrapper(TabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
-        self.tab = self.tab_scroller.find("div", class_="tab tab-near")
+        self._tab = self._tab_scroller.find("div", class_="tab tab-near")
 
     def get_information(self):
         info_of_nearby_cities = {}
 
-        for near_element in self.tab_near.find("div", class_="details grid show"):  # find_all("li data-type=city")
+        for near_element in self._tab.find("div", class_="details grid show"):  # find_all("li data-type=city")
             city = near_element.find("div", class_="text").h3.a.text
 
             country = near_element.find("div", class_="text").h4.a.text
@@ -233,12 +207,12 @@ class NearTabScrapper(TabScrapper):
 class NextTabScrapper(TabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
-        self.tab = self.tab_scroller.find("div", class_="tab tab-next")
+        self._tab = self._tab_scroller.find("div", class_="tab tab-next")
 
     def get_information(self):
         info_of_nearby_cities = {}
 
-        for near_element in self.tab_next.find("div", class_="details grid show"):  # find_all("li data-type=city")
+        for near_element in self._tab.find("div", class_="details grid show"):  # find_all("li data-type=city")
             city = near_element.find("div", class_="text").h3.a.text
 
             country = near_element.find("div", class_="text").h4.a.text
@@ -302,12 +276,12 @@ class NextTabScrapper(TabScrapper):
 class SimilarTabScrapper(TabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
-        self.tab = self.tab_scroller.find("div", class_="tab tab-similar")
+        self._tab = self._tab_scroller.find("div", class_="tab tab-similar")
 
     def get_information(self):
         info_of_nearby_cities = {}
 
-        for near_element in self.tab_similar.find("div", class_="details grid show"):  # find_all("li data-type=city")
+        for near_element in self._tab.find("div", class_="details grid show"):  # find_all("li data-type=city")
             # print(f'near_element : {near_element.prettify()}')
             city = near_element.find("div", class_="text").h3.a.text
 
