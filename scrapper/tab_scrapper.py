@@ -71,19 +71,20 @@ class ProsAndConsTabScrapper(TabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
         self._tab = self._tab_scroller.find("div", class_="tab tab-pros-cons")
+        self._keys_dict = {0: 'pros', 1: 'cons'}
 
     def get_information(self):
-        list_of_pros_cons = []
-        list_of_pros_list_and_cons_list = []
+        pros_cons = []
+        info_dict = {}
 
-        for p_element in self._tab.find_all("div"):
-            for pros_cons_element in p_element.find_all("p"):
-                pros_cons = pros_cons_element.get_text(strip=True)
-                list_of_pros_cons.append(pros_cons)
-            list_of_pros_list_and_cons_list.append(list_of_pros_cons)
-            list_of_pros_cons = []
+        for i, div in enumerate(self._tab.find_all("div")):
+            for p in div.find_all("p"):
+                pro_con = p.get_text(strip=True)
+                pros_cons.append(pro_con)
+            info_dict.update({self._keys_dict[i]: pros_cons})
+            pros_cons = []
 
-        return list_of_pros_list_and_cons_list
+        return info_dict
 
 
 class ReviewsTabScrapper(TabScrapper):
