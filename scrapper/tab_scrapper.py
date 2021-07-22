@@ -78,16 +78,16 @@ class ProsAndConsTabScrapper(TabScrapper):
 
     def get_information(self):
         pros_cons = []
-        info_dict = {}
+        pros_cons_dict = {}
 
         for i, div in enumerate(self._tab.find_all("div")):
             for p in div.find_all("p"):
                 pro_con = p.get_text(strip=True)
                 pros_cons.append(pro_con)
-            info_dict.update({self._keys_dict[i]: pros_cons})
+            pros_cons_dict.update({self._keys_dict[i]: pros_cons})
             pros_cons = []
 
-        return info_dict
+        return pros_cons_dict
 
 
 class ReviewsTabScrapper(TabScrapper):
@@ -99,7 +99,6 @@ class ReviewsTabScrapper(TabScrapper):
         return [review_element.text for review_element in self._tab.find_all("div", class_="review-text")]
 
 
-# TODO dict like {(attribute, month): { text, value }}
 class WeatherTabScrapper(TabScrapper):
     def __init__(self, soup):
         super().__init__(soup)
@@ -107,16 +106,18 @@ class WeatherTabScrapper(TabScrapper):
         self.climate_table = self._tab.find("table", class_="climate")
 
     def get_information(self):
-        weather_data = []
+        weather_dict = {}
         table_body = self.climate_table
 
         rows = table_body.find_all('tr')
-        for row in rows:
+        months = [col.get_text() for col in rows[0].find_all('td')[1:]]
+        for row in rows[1:]:
             cols = row.find_all('td')
-            cols = [ele.text.strip() for ele in cols]
-            weather_data.append([ele for ele in cols if ele])  # Get rid of empty values
+            key = cols[0].get_text()
+            # TODO Get rid of empty values
+            weather_dict.update({key: [(months[i], col.get_text(strip=True)) for i, col in enumerate(cols[1:])]})
 
-        return weather_data
+        return weather_dict
 
 
 class PhotosTabScrapper(TabScrapper):
