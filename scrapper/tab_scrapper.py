@@ -20,7 +20,7 @@ class TabScrapper:
     @staticmethod
     def is_valid(tab):
         try:
-            dynamic_tab_scrapper = eval(f"{TabScrapper.tab_name(tab)}TabScrapper")
+            dynamic_tab_scrapper = eval(f"{TabScrapper.get_name(tab)}TabScrapper")
         except NameError:
             return False
         else:
