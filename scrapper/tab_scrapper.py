@@ -1,7 +1,10 @@
+import time
+
 from bs4 import BeautifulSoup
 import requests as rq
-import re
 from logger import Logger
+
+LATIN1_NON_BREAKING_SPACE = u'\xa0'
 
 
 class TabScrapper:
@@ -126,11 +129,13 @@ class PhotosTabScrapper(TabScrapper):
 
 
 class CityGridTabScrapper(TabScrapper):
+    def _get_text(self, city):
+        return city.find("div", class_="text").h3.a.text.replace(LATIN1_NON_BREAKING_SPACE, u' ')
+
     def get_information(self):
         grid = self._tab.find("div", class_="details grid show")
         cities = grid.find_all("li", attrs={'data-type': 'city'})
-        # TODO fix encoding
-        return [city.find("div", class_="text").h3.a.text for city in cities]
+        return [self._get_text(city) for city in cities]
 
 
 class NearTabScrapper(CityGridTabScrapper):
@@ -153,42 +158,44 @@ class SimilarTabScrapper(CityGridTabScrapper):
 
 def main():
     nomadlist_lisbon_url = "https://nomadlist.com/lisbon"
-    nomadlist_lisbon_text = rq.get(nomadlist_lisbon_url).text
+    nomadlist_lisbon_text = rq.get(nomadlist_lisbon_url).content
     nomadlist_lisbon_soup = BeautifulSoup(nomadlist_lisbon_text, "html.parser")
 
-    tab_scrapper_soup_object = TabScrapper(nomadlist_lisbon_soup)
-    tab_scrapper_tabs_dict = tab_scrapper_soup_object.get_information()
-    print(tab_scrapper_tabs_dict)
+    # tab_scrapper_soup_object = TabScrapper(nomadlist_lisbon_soup)
+    # tab_scrapper_tabs_dict = tab_scrapper_soup_object.get_information()
+    # print(tab_scrapper_tabs_dict)
 
-    scores_tab_scrapper_object = ScoresTabScrapper(nomadlist_lisbon_soup)
-    print(scores_tab_scrapper_object.get_information())
+    # scores_tab_scrapper_object = ScoresTabScrapper(nomadlist_lisbon_soup)
+    # print(scores_tab_scrapper_object.get_information())
 
-    digital_nomad_guide_tab_scrapper_object = DigitalNomadGuideTabScrapper(nomadlist_lisbon_soup)
-    print(digital_nomad_guide_tab_scrapper_object.get_information())
+    # digital_nomad_guide_tab_scrapper_object = DigitalNomadGuideTabScrapper(nomadlist_lisbon_soup)
+    # print(digital_nomad_guide_tab_scrapper_object.get_information())
 
-    cost_of_living_tab_scrapper_object = CostOfLivingTabScrapper(nomadlist_lisbon_soup)
-    print(cost_of_living_tab_scrapper_object.get_information())
+    # cost_of_living_tab_scrapper_object = CostOfLivingTabScrapper(nomadlist_lisbon_soup)
+    # print(cost_of_living_tab_scrapper_object.get_information())
 
-    pros_and_cons_tab_scrapper_object = ProsAndConsTabScrapper(nomadlist_lisbon_soup)
-    print(pros_and_cons_tab_scrapper_object.get_information())
+    # pros_and_cons_tab_scrapper_object = ProsAndConsTabScrapper(nomadlist_lisbon_soup)
+    # print(pros_and_cons_tab_scrapper_object.get_information())
 
-    reviews_tab_scrapper_object = ReviewsTabScrapper(nomadlist_lisbon_soup)
-    print(reviews_tab_scrapper_object.get_information())
+    # reviews_tab_scrapper_object = ReviewsTabScrapper(nomadlist_lisbon_soup)
+    # print(reviews_tab_scrapper_object.get_information())
 
-    weather_tab_scrapper_object = WeatherTabScrapper(nomadlist_lisbon_soup)
-    print(weather_tab_scrapper_object.get_information())
+    # weather_tab_scrapper_object = WeatherTabScrapper(nomadlist_lisbon_soup)
+    # print(weather_tab_scrapper_object.get_information())
 
-    photos_tab_scrapper_object = PhotosTabScrapper(nomadlist_lisbon_soup)
-    print(photos_tab_scrapper_object.get_information())
+    # photos_tab_scrapper_object = PhotosTabScrapper(nomadlist_lisbon_soup)
+    # print(photos_tab_scrapper_object.get_information())
 
-    near_tab_scrapper_object = NearTabScrapper(nomadlist_lisbon_soup)
-    print(near_tab_scrapper_object.get_information())
+    # near_tab_scrapper_object = NearTabScrapper(nomadlist_lisbon_soup)
+    # print(near_tab_scrapper_object.get_information())
 
-    next_tab_scrapper_object = NextTabScrapper(nomadlist_lisbon_soup)
-    print(next_tab_scrapper_object.get_information())
+    # next_tab_scrapper_object = NextTabScrapper(nomadlist_lisbon_soup)
+    # print(next_tab_scrapper_object.get_information())
 
-    similar_tab_scrapper_object = SimilarTabScrapper(nomadlist_lisbon_soup)
-    print(similar_tab_scrapper_object.get_information())
+    # similar_tab_scrapper_object = SimilarTabScrapper(nomadlist_lisbon_soup)
+    # print(similar_tab_scrapper_object.get_information())
+
+    time.sleep(5)
 
 
 if __name__ == "__main__":
