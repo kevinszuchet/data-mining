@@ -30,7 +30,7 @@ class NomadListScrapper:
         self._driver.get(self._baseUrl)
         scroll_height = self._get_scroll_height()
 
-        self._logger.info("Initial scroll height:", scroll_height)
+        self._logger.info(f"Initial scroll height: {scroll_height}")
 
         while True:
             try:
@@ -55,13 +55,13 @@ class NomadListScrapper:
 
                 scroll_height = new_scroll_height
             except Exception as e:
-                self._logger.error("Error trying to scroll to the end!", e)
+                self._logger.error(f"Error trying to scroll to the end! - {e}")
                 self._logger.info("Getting all the cities fetched until now...")
                 break
 
         page_source = self._driver.page_source
         soup = BeautifulSoup(page_source, "html.parser")
-        self._logger.debug("This is the pretty page source:", soup.prettify())
+        self._logger.debug(f"This is the pretty page source: {soup.prettify()}")
         self._driver.close()
         return soup.find_all('li', attrs={'data-type': 'city'})
 
@@ -96,4 +96,4 @@ class NomadListScrapper:
             futures = self._make_request_to_city_details()
             return [self._get_city_details(future) for future in as_completed(futures)]
         except Exception as e:
-            self._logger.error(f"Exception: {e}")
+            self._logger.error(e)
