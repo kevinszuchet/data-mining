@@ -115,6 +115,7 @@ class WeatherTabScrapper(TabScrapper):
             cols = row.find_all('td')
             key = cols[0].get_text()
             # TODO Get rid of empty values
+            # TODO Contemplate percents, imperial, metric and other units (now the value is all the text together)
             weather_dict.update({key: [(months[i], col.get_text(strip=True)) for i, col in enumerate(cols[1:])]})
 
         return weather_dict
