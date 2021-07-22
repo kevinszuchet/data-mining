@@ -93,6 +93,7 @@ class NomadListScrapper:
         Then, returns a list of dicts with all the cities.
         """
         try:
+            # TODO fix the problem with the ton of requests to the same city
             futures = self._make_request_to_city_details()
             return [self._get_city_details(future) for future in as_completed(futures)]
         except Exception as e:
