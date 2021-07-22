@@ -18,7 +18,7 @@ class CityScrapper:
     def _get_tab_information(self, tab, city_details_soup):
         self._logger.info("Getting the tab information...")
         self._logger.debug(f"Tab: {tab}")
-        tab_name = TabScrapper.tab_name(tab)
+        tab_name = TabScrapper.get_name(tab)
         self._logger.debug(f"Tab name: {tab_name}")
         dynamic_tab_scrapper = eval(f"{tab_name}TabScrapper")
         self._logger.debug(f"DynamicTabScrapper: {dynamic_tab_scrapper}")
@@ -63,8 +63,11 @@ class CityScrapper:
         self._logger.debug(f"City details - Tabs: {tabs}")
         tabs_information = {TabScrapper.get_name(tab): self._get_tab_information(tab, city_details_soup)
                             for tab in tabs if TabScrapper.is_valid(tab)}
+        self._logger.debug(f"City details - Tabs Information: {tabs_information}")
 
         self._logger.info(f"All the information about {city}, {country} was fetched!")
+
+        # TODO get the rank
 
         return {
             'city': city,
