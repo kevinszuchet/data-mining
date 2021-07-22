@@ -24,7 +24,7 @@ class TabScrapper:
         except NameError:
             return False
         else:
-            return isinstance(dynamic_tab_scrapper, TabScrapper)
+            return issubclass(dynamic_tab_scrapper, TabScrapper)
 
     def get_information(self):
         pass
