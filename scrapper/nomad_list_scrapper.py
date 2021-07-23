@@ -5,7 +5,7 @@ import time
 from requests_futures.sessions import FuturesSession
 from selenium import webdriver
 from bs4 import BeautifulSoup
-from conf import NOMAD_LIST_URL, NOMAD_LIST_SCROLL_PAUSE_TIME, NOMAD_LIST_DELAY_AFTER_REQUEST, PATH_TO_WEB_DRIVER
+from conf import NOMAD_LIST_URL, NOMAD_LIST_SCROLL_PAUSE_TIME, NOMAD_LIST_DELAY_AFTER_REQUEST, CHROME_DRIVER_PATH
 from scrapper.city_scrapper import CityScrapper
 from concurrent.futures import as_completed
 from logger import Logger
@@ -20,7 +20,7 @@ class NomadListScrapper:
 
     def __init__(self):
         self._baseUrl = NOMAD_LIST_URL
-        self._driver = webdriver.Chrome(PATH_TO_WEB_DRIVER) if PATH_TO_WEB_DRIVER else webdriver.Chrome()
+        self._driver = webdriver.Chrome(CHROME_DRIVER_PATH) if CHROME_DRIVER_PATH else webdriver.Chrome()
         # max_workers default value 8
         self._session = FuturesSession()
         self._logger = Logger().logger
