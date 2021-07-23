@@ -5,7 +5,7 @@ import time
 from requests_futures.sessions import FuturesSession
 from selenium import webdriver
 from bs4 import BeautifulSoup
-from conf import NOMAD_LIST_URL, NOMAD_LIST_SCROLL_PAUSE_TIME, PATH_TO_WEB_DRIVER
+from conf import NOMAD_LIST_URL, NOMAD_LIST_SCROLL_PAUSE_TIME, NOMAD_LIST_DELAY_AFTER_REQUEST, PATH_TO_WEB_DRIVER
 from scrapper.city_scrapper import CityScrapper
 from concurrent.futures import as_completed
 from logger import Logger
@@ -63,7 +63,9 @@ class NomadListScrapper:
         soup = BeautifulSoup(page_source, "html.parser")
         self._logger.debug(f"This is the pretty page source: {soup.prettify()}")
         self._driver.close()
-        return soup.find_all('li', attrs={'data-type': 'city'})
+        cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
+        self._logger.debug(f"Cities lis: {cities_lis}")
+        return cities_lis
 
     def _get_scroll_height(self):
         """Takes the scroll height of the document executing javascript in the browser."""
@@ -74,7 +76,7 @@ class NomadListScrapper:
         url = f"{self._baseUrl}{CityScrapper().get_city_url(city_li)}"
         html = self._session.get(url)
         self._logger.info(f"Request to {url} made, now is time to sleep...")
-        time.sleep(5)
+        time.sleep(NOMAD_LIST_DELAY_AFTER_REQUEST)
         return html
 
     def _make_request_to_city_details(self):
@@ -83,7 +85,6 @@ class NomadListScrapper:
 
     def _get_city_details(self, future):
         res = future.result()
-        self._logger.debug(f"City Details GET - Status Code: {res.status_code}")
         city_details_html = res.content
         return CityScrapper().get_city_details(city_details_html)
 
@@ -93,8 +94,9 @@ class NomadListScrapper:
         Then, returns a list of dicts with all the cities.
         """
         try:
-            # TODO fix the problem with the ton of requests to the same city
+            # TODO logging problem with concurrency
             futures = self._make_request_to_city_details()
-            return [self._get_city_details(future) for future in as_completed(futures)]
+            return [self._get_city_details(future) for future in as_completed(futures) if
+                    future.result().status_code == requests.codes.OK]
         except Exception as e:
             self._logger.error(e)
