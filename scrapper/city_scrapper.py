@@ -26,21 +26,20 @@ class CityScrapper:
 
     def valid_tag(self, city_li):
         """Given the city li, checks if the tag is valid."""
-        self._logger.debug(f"Validating the city li tag: {city_li}")
+        self._logger.debug(f"Validating the city li tag: {city_li.prettify()}")
         if city_li is None:
             return False
 
         attrs = city_li.attrs
-        self._logger.debug(f"Here they are... The city li attributes: {attrs}")
+        city_url = self.get_city_url(city_li)
+        self._logger.debug(f"City li url: {city_url}")
         return attrs.get('data-type') == 'city' and not CityScrapper.city_template_re.search(attrs.get('data-slug'))\
-            and self.get_city_url(city_li) is not None
+            and city_url is not None
 
     def get_city_url(self, city_li):
         """Given the city li, returns the url of it to go to the details."""
         a = city_li.find("a", attrs={'itemprop': 'url'})
-        self._logger.debug(f"City li > a: {a}")
         if a:
-            self._logger.debug(f"a > attrs: {a.attrs}")
             return a.attrs.get("href").strip()
 
     def get_city_details(self, city_details_html):
