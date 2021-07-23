@@ -32,7 +32,8 @@ class CityScrapper:
 
         attrs = city_li.attrs
         self._logger.debug(f"Here they are... The city li attributes: {attrs}")
-        return attrs.get('data-type') == 'city' and not CityScrapper.city_template_re.search(attrs.get('data-slug'))
+        return attrs.get('data-type') == 'city' and not CityScrapper.city_template_re.search(attrs.get('data-slug'))\
+            and self.get_city_url(city_li) is not None
 
     def get_city_url(self, city_li):
         """Given the city li, returns the url of it to go to the details."""
