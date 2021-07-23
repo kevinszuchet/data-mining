@@ -1,12 +1,12 @@
 # Data Mining Project
 
-Web Scrapper to get all the information of the cities in Nomad List.
+Web Scrapper to get all the information of the cities in [Nomad List](https://nomadlist.com/). 
+The goal is to _find the best place in the world to live, work and travel as a remote worker_.
 
 ## About the project
 
-- Instructions attached in Instructions_CH1.pdf
 - Coded with Python 3 🐍
-- Main packages: requests, bs4, selenium.
+- Main packages: [requests](https://docs.python-requests.org/en/master/), [bs4](https://www.crummy.com/software/BeautifulSoup/), [selenium](https://selenium-python.readthedocs.io/).
 
 ## Getting Started
 
@@ -39,7 +39,8 @@ CHROME_DRIVER_PATH='/path/to/chrome/driver' python3 main.py
 
 ## Roadmap
 
-- Design db using MySQL
+- Scrape data source
+- Design db using MySQL and store the data
 - Add a CLI for interacting with the scrapper
 - Enrich the data using external APIs
 - Deploy the code to AWS
