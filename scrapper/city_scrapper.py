@@ -1,6 +1,5 @@
 import re
 from scrapper.tab_scrapper import *
-from logger import Logger
 
 
 # TODO: is it ok if I change a method from static to non-static because of the logger?
@@ -12,8 +11,8 @@ class CityScrapper:
     # To avoid cities lis with 'data-slug="{slugName}"'
     city_template_re = re.compile(r'{\w+}')
 
-    def __init__(self):
-        self._logger = Logger().logger
+    def __init__(self, logger):
+        self._logger = logger
 
     def _get_tab_information(self, tab, city_details_soup):
         self._logger.info("Getting the tab information...")
@@ -22,7 +21,7 @@ class CityScrapper:
         self._logger.debug(f"Tab name: {tab_name}")
         dynamic_tab_scrapper = eval(f"{tab_name}TabScrapper")
         self._logger.debug(f"DynamicTabScrapper: {dynamic_tab_scrapper}")
-        return dynamic_tab_scrapper(city_details_soup).get_information()
+        return dynamic_tab_scrapper(city_details_soup, logger=self._logger).get_information()
 
     def valid_tag(self, city_li):
         """Given the city li, checks if the tag is valid."""
@@ -33,12 +32,12 @@ class CityScrapper:
         attrs = city_li.attrs
         city_url = self.get_city_url(city_li)
         self._logger.debug(f"City li url: {city_url}")
-        return attrs.get('data-type') == 'city' and not CityScrapper.city_template_re.search(attrs.get('data-slug'))\
-            and city_url is not None
+        return attrs.get('data-type') == 'city' and not CityScrapper.city_template_re.search(attrs.get('data-slug')) \
+               and city_url is not None
 
     def get_city_url(self, city_li):
         """Given the city li, returns the url of it to go to the details."""
-        a = city_li.find("a", attrs={'itemprop': 'url'})
+        a = city_li.find("a")
         if a:
             return a.attrs.get("href").strip()
 
