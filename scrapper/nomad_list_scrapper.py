@@ -6,9 +6,6 @@ from requests import HTTPError
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from scrapper.city_scrapper import CityScrapper
-from logger import Logger
-from urllib.error import HTTPError
-from urllib.error import URLError
 
 # TODO Adapter for Selenium Web Drivers + Context Manager
 
