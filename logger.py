@@ -16,12 +16,12 @@ class Logger:
 
         # Create a file handler and add it to logger
         file_handler = logging.FileHandler(LOG_FILE)
-        file_handler.setLevel(logging.DEBUG)
+        # file_handler.setLevel(logging.ERROR)
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
 
         # Create a stream handler and add it to logger
         stream_handler = logging.StreamHandler(sys.stdout)
-        stream_handler.setLevel(logging.DEBUG)
+        # stream_handler.setLevel(logging.ERROR)
         stream_handler.setFormatter(formatter)
         self.logger.addHandler(stream_handler)
