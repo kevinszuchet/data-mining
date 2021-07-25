@@ -10,3 +10,5 @@ CHROME_DRIVER_PATH = os.getenv('CHROME_DRIVER_PATH')
 
 LOG_FILE = "logs.log"
 LOG_FORMAT = '%(asctime)s-%(levelname)s-FILE:%(filename)s-FUNC:%(funcName)s-LINE:%(lineno)d-%(message)s'
+
+JSON_FILENAME = "data.json"
