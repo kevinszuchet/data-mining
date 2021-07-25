@@ -8,10 +8,12 @@ LATIN1_NON_BREAKING_SPACE = u'\xa0'
 
 
 class TabScrapper:
-    def __init__(self, soup):
+    def __init__(self, soup, logger=None):
         container = soup.find("div", class_="tab-scroller-container")
         self._tab_scroller = container.find("div", class_="tab-scroller")
-        self._logger = Logger().logger
+        if logger is None:
+            logger = Logger().logger
+        self._logger = logger
 
     @staticmethod
     def get_name(tab):
@@ -52,8 +54,8 @@ class KeyValueTabScrapper(TabScrapper):
 
 
 class ScoresTabScrapper(KeyValueTabScrapper):
-    def __init__(self, soup):
-        super().__init__(soup)
+    def __init__(self, soup, **kwargs):
+        super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-ranking show")
 
     def _get_value(self, value_column):
@@ -62,20 +64,20 @@ class ScoresTabScrapper(KeyValueTabScrapper):
 
 
 class DigitalNomadGuideTabScrapper(KeyValueTabScrapper):
-    def __init__(self, soup):
-        super().__init__(soup)
+    def __init__(self, soup, **kwargs):
+        super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-digital-nomad-guide")
 
 
 class CostOfLivingTabScrapper(KeyValueTabScrapper):
-    def __init__(self, soup):
-        super().__init__(soup)
+    def __init__(self, soup, **kwargs):
+        super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab editable tab-cost-of-living double-width")
 
 
 class ProsAndConsTabScrapper(TabScrapper):
-    def __init__(self, soup):
-        super().__init__(soup)
+    def __init__(self, soup, **kwargs):
+        super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-pros-cons")
         self._keys_dict = {0: 'pros', 1: 'cons'}
 
@@ -97,8 +99,8 @@ class ProsAndConsTabScrapper(TabScrapper):
 
 
 class ReviewsTabScrapper(TabScrapper):
-    def __init__(self, soup):
-        super().__init__(soup)
+    def __init__(self, soup, **kwargs):
+        super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-reviews")
 
     def get_information(self):
@@ -109,8 +111,8 @@ class ReviewsTabScrapper(TabScrapper):
 
 
 class WeatherTabScrapper(TabScrapper):
-    def __init__(self, soup):
-        super().__init__(soup)
+    def __init__(self, soup, **kwargs):
+        super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-weather")
         self.climate_table = self._tab.find("table", class_="climate")
 
@@ -134,8 +136,8 @@ class WeatherTabScrapper(TabScrapper):
 
 
 class PhotosTabScrapper(TabScrapper):
-    def __init__(self, soup):
-        super().__init__(soup)
+    def __init__(self, soup, **kwargs):
+        super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-photos")
 
     def get_information(self):
@@ -159,20 +161,20 @@ class CityGridTabScrapper(TabScrapper):
 
 
 class NearTabScrapper(CityGridTabScrapper):
-    def __init__(self, soup):
-        super().__init__(soup)
+    def __init__(self, soup, **kwargs):
+        super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-near")
 
 
 class NextTabScrapper(CityGridTabScrapper):
-    def __init__(self, soup):
-        super().__init__(soup)
+    def __init__(self, soup, **kwargs):
+        super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-next")
 
 
 class SimilarTabScrapper(CityGridTabScrapper):
-    def __init__(self, soup):
-        super().__init__(soup)
+    def __init__(self, soup, **kwargs):
+        super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-similar")
 
 

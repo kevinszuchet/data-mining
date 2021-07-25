@@ -129,3 +129,6 @@ dmypy.json
 .pyre/
 .idea
 .DS_Store
+
+# HTML files (like the nomad list page source)
+*.html
