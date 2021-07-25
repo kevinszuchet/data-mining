@@ -9,6 +9,8 @@ from conf import NOMAD_LIST_URL, NOMAD_LIST_SCROLL_PAUSE_TIME, NOMAD_LIST_DELAY_
 from scrapper.city_scrapper import CityScrapper
 from concurrent.futures import as_completed
 from logger import Logger
+from urllib.error import HTTPError
+from urllib.error import URLError
 
 
 # TODO handle errors
@@ -58,14 +60,16 @@ class NomadListScrapper:
                 self._logger.error(f"Error trying to scroll to the end! - {e}")
                 self._logger.info("Getting all the cities fetched until now...")
                 break
-
-        page_source = self._driver.page_source
-        soup = BeautifulSoup(page_source, "html.parser")
-        self._logger.debug(f"This is the pretty page source: {soup.prettify()}")
-        self._driver.close()
-        cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
-        self._logger.debug(f"Cities lis: {cities_lis}")
-        return cities_lis
+        try:
+            page_source = self._driver.page_source
+            soup = BeautifulSoup(page_source, "html.parser")
+            self._logger.debug(f"This is the pretty page source: {soup.prettify()}")
+            self._driver.close()
+            cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
+            self._logger.debug(f"Cities lis: {cities_lis}")
+            return cities_lis
+        except(AttributeError, KeyError) as e:
+            print(e)
 
     def _get_scroll_height(self):
         """Takes the scroll height of the document executing javascript in the browser."""
@@ -73,11 +77,17 @@ class NomadListScrapper:
 
     def _do_request(self, city_li):
         """Given the city li, takes the endpoint from the CityScrapper, and returns the result of making the request."""
-        url = f"{self._baseUrl}{CityScrapper().get_city_url(city_li)}"
-        html = self._session.get(url)
-        self._logger.info(f"Request to {url} made, now is time to sleep...")
-        time.sleep(NOMAD_LIST_DELAY_AFTER_REQUEST)
-        return html
+        try:
+            url = f"{self._baseUrl}{CityScrapper().get_city_url(city_li)}"
+            html = self._session.get(url)
+            self._logger.info(f"Request to {url} made, now it's time to sleep...")
+            time.sleep(NOMAD_LIST_DELAY_AFTER_REQUEST)
+            return html
+        except HTTPError as hp:
+            print(hp)
+        except URLError as ue:
+            print(ue)
+
 
     def _make_request_to_city_details(self):
         """Checks if the lis are valid, takes the valid ones and make the requests to the city details page."""
