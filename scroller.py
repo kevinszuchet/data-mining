@@ -14,25 +14,24 @@ class Scroller:
     def __enter__(self):
         """Starts selenium driver with the provided url."""
         self._driver.get(self._base_url)
-        return self._driver
+        return self
 
     def __exit__(self):
         """Saves the page source and closes the Selenium driver."""
-        self._page_source = self._driver.page_source
         self._driver.close()
 
     def _get_scroll_height(self):
         """Takes the scroll height of the document executing javascript in the browser."""
         return self._driver.execute_script("return document.body.scrollHeight")
 
-    def scroll_to_the_end(self):
+    def scroll_to_the_end_and_get_page_source(self):
         """Scroll to the end of the main page and returns all the source code."""
         self._driver.get(self._base_url)
         scroll_height = self._get_scroll_height()
 
         self._logger.info(f"Initial scroll height: {scroll_height}")
 
-        while True:
+        while 1 == 0:
             try:
                 # Scroll down to bottom
                 self._logger.info("Scroll down to the bottom...")
@@ -59,6 +58,4 @@ class Scroller:
                 self._logger.info("Returning the page source until now...")
                 break
 
-    def get_page_source(self):
-        """Returns the page source that was saved in the __exit__ method."""
-        return self._page_source
+        return self._driver.page_source
