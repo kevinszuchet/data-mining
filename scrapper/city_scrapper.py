@@ -1,6 +1,5 @@
 import re
-from tab_scrapper import *
-from logger import Logger
+from .tab_scrapper import *
 from bs4 import BeautifulSoup
 
 # TODO: is it ok if I change a method from static to non-static because of the logger?

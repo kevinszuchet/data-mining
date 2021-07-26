@@ -3,9 +3,9 @@ import time
 import conf as CFG
 import os
 from requests import HTTPError
-from selenium import webdriver
 from bs4 import BeautifulSoup
 from scrapper.city_scrapper import CityScrapper
+from scroller import Scroller
 
 # TODO Adapter for Selenium Web Drivers + Context Manager
 
@@ -20,7 +20,7 @@ class NomadListScrapper:
 
     def __init__(self, logger):
         self._base_url = CFG.NOMAD_LIST_URL
-        self._driver = webdriver.Chrome(CFG.CHROME_DRIVER_PATH) if CFG.CHROME_DRIVER_PATH else webdriver.Chrome()
+        self._scroller = Scroller(self._base_url, logger)
         self._logger = logger
         self._city_scrapper = CityScrapper(self._logger)
 
@@ -30,52 +30,15 @@ class NomadListScrapper:
             with open("page_source.html", 'r') as opened_file:
                 page_source = opened_file.read()
         else:
-            self._driver.get(self._base_url)
-            scroll_height = self._get_scroll_height()
-
-            self._logger.info(f"Initial scroll height: {scroll_height}")
-
-            while True:
-                try:
-                    # Scroll down to bottom
-                    self._logger.info("Scroll down to the bottom...")
-                    self._driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-
-                    self._logger.info(f"Time to sleep, see you in {CFG.NOMAD_LIST_SCROLL_PAUSE_TIME} seconds...")
-
-                    # Wait to load page
-                    time.sleep(CFG.NOMAD_LIST_SCROLL_PAUSE_TIME)
-
-                    # Calculate new scroll height and compare with last scroll height
-                    self._logger.info("Getting the new scroll height...")
-                    new_scroll_height = self._get_scroll_height()
-                    self._logger.info(f"Old scroll height: {scroll_height} - New scroll height: {new_scroll_height}")
-
-                    self._logger.info(f"Checking if scroll heights {new_scroll_height} == {scroll_height}")
-                    if new_scroll_height == scroll_height:
-                        # If scroll heights are the same, it'll break the loop
-                        break
-
-                    scroll_height = new_scroll_height
-                except Exception as e:
-                    self._logger.error(f"Error trying to scroll to the end! - {e}")
-                    self._logger.info("Getting all the cities fetched until now...")
-                    break
-
-            page_source = self._driver.page_source
+            page_source = self._scroller.scroll_and_get_the_source_code()
             with open("page_source.html", 'w+') as opened_file:
                 opened_file.write(page_source)
 
         soup = BeautifulSoup(page_source, "html.parser")
         self._logger.debug(f"This is the pretty page source: {soup.prettify()}")
-        self._driver.close()
         cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
         self._logger.debug(f"Cities lis: {cities_lis}")
         return cities_lis
-
-    def _get_scroll_height(self):
-        """Takes the scroll height of the document executing javascript in the browser."""
-        return self._driver.execute_script("return document.body.scrollHeight")
 
     def _do_request(self, city_li):
         """Given the city li, takes the endpoint from the CityScrapper, and returns the result of making the request."""
