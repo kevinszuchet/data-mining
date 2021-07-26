@@ -23,22 +23,29 @@ class NomadListScrapper:
         self._logger = logger
         self._city_scrapper = CityScrapper(self._logger)
 
-    def _get_all_the_cities(self):
-        """Scroll to the end of the main page fetching all the cities as li tags."""
+    def _get_page_source(self):
         if os.path.exists("page_source.html") and os.getenv('ENV') != "production":
             with open("page_source.html", 'r') as opened_file:
                 page_source = opened_file.read()
-        else:
-            with Scroller(self._base_url, self._logger) as scroller:
-                page_source = scroller.scroll_to_the_end_and_get_page_source()
 
-            if page_source:
-                with open("page_source.html", 'w+') as opened_file:
-                    opened_file.write(page_source)
+            return page_source
 
+        with Scroller(self._base_url, self._logger) as scroller:
+            page_source = scroller.scroll_to_the_end_and_get_page_source()
+
+        if page_source:
+            with open("page_source.html", 'w+') as opened_file:
+                opened_file.write(page_source)
+
+            return page_source
+
+    def _get_all_the_cities(self):
+        """Scroll to the end of the main page fetching all the cities as li tags."""
         try:
+            page_source = self._get_page_source()
+
             if page_source is None:
-                return []
+                return
 
             soup = BeautifulSoup(page_source, "html.parser")
             self._logger.debug(f"This is the pretty page source: {soup.prettify()}")
@@ -58,7 +65,10 @@ class NomadListScrapper:
 
     def _make_request_to_city_details(self):
         """Checks if the lis are valid, takes the valid ones and make the requests to the city details page."""
-        return (self._do_request(li) for li in self._get_all_the_cities() if self._city_scrapper.valid_tag(li))
+        cities = self._get_all_the_cities()
+        if cities is None:
+            return []
+        return (self._do_request(li) for li in cities if self._city_scrapper.valid_tag(li))
 
     def _get_city_details(self, res):
         city_details_html = res.content
@@ -67,13 +77,18 @@ class NomadListScrapper:
         res.raise_for_status()
         return self._city_scrapper.get_city_details(city_details_html)
 
+    def _exception_handler(self, req, error):
+        self._logger.error(f"Error making the request {req}: {error}")
+
     def get_cities(self):
         """
         Takes the cities from the home page, builds a dictionary for each one with the available information.
         Then, returns a list of dicts with all the cities.
         """
         cities = []
-        for res in grequests.map(self._make_request_to_city_details(), size=CFG.NOMAD_LIST_REQUESTS_BATCH_SIZE):
+
+        for res in grequests.map(self._make_request_to_city_details(), size=CFG.NOMAD_LIST_REQUESTS_BATCH_SIZE,
+                                 exception_handler=self._exception_handler):
             try:
                 details = self._get_city_details(res)
                 if details is None:
