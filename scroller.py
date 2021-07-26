@@ -2,18 +2,30 @@ import time
 import conf as CFG
 from selenium import webdriver
 
-
-# TODO Context Manager
-
 class Scroller:
-    """Class responsible to scroll web sites."""
+    """Class responsible to scroll web sites and take the page source of them."""
 
     def __init__(self, site_url, logger):
         self._base_url = site_url
         self._driver = webdriver.Chrome(CFG.CHROME_DRIVER_PATH) if CFG.CHROME_DRIVER_PATH else webdriver.Chrome()
         self._logger = logger
+        self._page_source = None
 
-    def scroll_and_get_the_source_code(self):
+    def __enter__(self):
+        """Starts selenium driver with the provided url."""
+        self._driver.get(self._base_url)
+        return self._driver
+
+    def __exit__(self):
+        """Saves the page source and closes the Selenium driver."""
+        self._page_source = self._driver.page_source
+        self._driver.close()
+
+    def _get_scroll_height(self):
+        """Takes the scroll height of the document executing javascript in the browser."""
+        return self._driver.execute_script("return document.body.scrollHeight")
+
+    def scroll_to_the_end(self):
         """Scroll to the end of the main page and returns all the source code."""
         self._driver.get(self._base_url)
         scroll_height = self._get_scroll_height()
@@ -47,10 +59,6 @@ class Scroller:
                 self._logger.info("Returning the page source until now...")
                 break
 
-        page_source = self._driver.page_source
-        self._driver.close()
-        return page_source
-
-    def _get_scroll_height(self):
-        """Takes the scroll height of the document executing javascript in the browser."""
-        return self._driver.execute_script("return document.body.scrollHeight")
+    def get_page_source(self):
+        """Returns the page source that was saved in the __exit__ method."""
+        return self._page_source
