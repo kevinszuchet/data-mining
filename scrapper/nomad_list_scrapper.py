@@ -20,7 +20,6 @@ class NomadListScrapper:
 
     def __init__(self, logger):
         self._base_url = CFG.NOMAD_LIST_URL
-        self._scroller = Scroller(self._base_url, logger)
         self._logger = logger
         self._city_scrapper = CityScrapper(self._logger)
 
@@ -30,11 +29,17 @@ class NomadListScrapper:
             with open("page_source.html", 'r') as opened_file:
                 page_source = opened_file.read()
         else:
-            page_source = self._scroller.scroll_and_get_the_source_code()
-            with open("page_source.html", 'w+') as opened_file:
-                opened_file.write(page_source)
+            with Scroller(self._base_url, self._logger) as scroller:
+                page_source = scroller.scroll_to_the_end_and_get_page_source()
+
+            if page_source:
+                with open("page_source.html", 'w+') as opened_file:
+                    opened_file.write(page_source)
 
         try:
+            if page_source is None:
+                return []
+
             soup = BeautifulSoup(page_source, "html.parser")
             self._logger.debug(f"This is the pretty page source: {soup.prettify()}")
             cities_lis = soup.find_all('li', attrs={'data-type': 'city'})

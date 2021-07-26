@@ -5,12 +5,12 @@ from scrapper.nomad_list_scrapper import NomadListScrapper
 from conf import JSON_FILENAME
 from logger import Logger
 
-
 def main():
     logger = Logger().logger
     try:
         cities = NomadListScrapper(logger).get_cities()
     except Exception as e:
+        # exc_info=True to log the traceback
         logger.error(f"Exception raised: {e}")
         sys.exit(1)
 
