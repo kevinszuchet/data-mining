@@ -2,11 +2,9 @@ import re
 from .tab_scrapper import *
 from bs4 import BeautifulSoup
 
-# TODO: is it ok if I change a method from static to non-static because of the logger?
-
 
 class CityScrapper:
-    """Class that knows how to get data from each city card."""
+    """Class that knows how to get data from each city."""
     action_regex = re.compile(r'(label|rating)-(\w+)-score')
 
     # To avoid cities lis with 'data-slug="{slugName}"'
@@ -16,10 +14,13 @@ class CityScrapper:
         self._logger = logger
 
     def _get_tab_information(self, tab, city_details_soup):
+        """
+        Given the tab and the soup object, dynamically builds a tab scrapper that depends on the name of the tab,
+        and gets all the information of it. Then, returns that information as a dict "{tab_name: tab_information}"
+        """
         self._logger.info("Getting the tab information...")
-        self._logger.debug(f"Tab: {tab}")
         tab_name = TabScrapper.get_name(tab)
-        self._logger.debug(f"Tab name: {tab_name}")
+        self._logger.debug(f"Tab with name {tab_name}: {tab}")
         dynamic_tab_scrapper = eval(f"{tab_name}TabScrapper")
         self._logger.debug(f"DynamicTabScrapper: {dynamic_tab_scrapper}")
         return dynamic_tab_scrapper(city_details_soup, logger=self._logger).get_information()
@@ -79,5 +80,3 @@ class CityScrapper:
             }
         except(AttributeError, KeyError) as e:
             self._logger.error(f"Error trying to get the city details: {e}")
-
-

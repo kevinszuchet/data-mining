@@ -8,6 +8,11 @@ LATIN1_NON_BREAKING_SPACE = u'\xa0'
 
 
 class TabScrapper:
+    """
+    Generic TabScrapper class. Is the father of all the other implementations. It knows how to return the name of the
+    tab and how to valid the html tag.
+    """
+
     def __init__(self, soup, logger=None):
         container = soup.find("div", class_="tab-scroller-container")
         self._tab_scroller = container.find("div", class_="tab-scroller")
@@ -17,10 +22,15 @@ class TabScrapper:
 
     @staticmethod
     def get_name(tab):
+        """Given the html tag of the tab, returns the name of the tab."""
         return tab.find("a").get_text(strip=True).replace(' ', '')
 
     @staticmethod
     def is_valid(tab):
+        """
+        Given the tag of the tab, dynamically initialize a new concrete tab scrapper,
+        and checks if it's a valid subclass.
+        """
         try:
             dynamic_tab_scrapper = eval(f"{TabScrapper.get_name(tab)}TabScrapper")
         except NameError:
@@ -29,9 +39,11 @@ class TabScrapper:
             return issubclass(dynamic_tab_scrapper, TabScrapper)
 
     def _get_information(self):
+        """Abstract method that all the subclasses have to override."""
         pass
 
     def get_information(self):
+        """Returns the information of the tab using the implementation of the concrete classes."""
         try:
             return self._get_information()
         except(AttributeError, KeyError) as e:
@@ -39,13 +51,20 @@ class TabScrapper:
 
 
 class KeyValueTabScrapper(TabScrapper):
+    """Class that knows how to handle tabs with a structure of <tr><td class="key"></td><td class="value"></td></tr>."""
+
     def _get_key(self, key_column):
+        """Given the key column it takes and returns the text of the column."""
         return key_column.get_text(strip=True)
 
     def _get_value(self, value_column):
+        """Given the value column it takes and returns the text of the column."""
         return value_column.text
 
     def _get_information(self):
+        """
+        Iterates over all the rows in the table, builds a dict with the keys and values columns and, returns the dict.
+        """
         info_dict = {}
         table = self._tab.find('table', class_='details')
         for row in table.find_all('tr'):
@@ -57,34 +76,45 @@ class KeyValueTabScrapper(TabScrapper):
 
 
 class ScoresTabScrapper(KeyValueTabScrapper):
+    """Class that knows how to scrap the data from the Scores tab."""
+
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-ranking show")
 
     def _get_value(self, value_column):
+        """Override the super class method. Given the value column it takes and returns the text of the value."""
         # TODO get Rating Value, Best Rating, and Width
         return value_column.div.div.text
 
 
 class DigitalNomadGuideTabScrapper(KeyValueTabScrapper):
+    """Class that knows how to scrap the data from the Digital Nomad Guide tab."""
+
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-digital-nomad-guide")
 
 
 class CostOfLivingTabScrapper(KeyValueTabScrapper):
+    """Class that knows how to scrap the data from the Cost of Living tab."""
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab editable tab-cost-of-living double-width")
 
 
 class ProsAndConsTabScrapper(TabScrapper):
+    """Class that knows how to scrap the data from the Pros and Cons tab."""
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-pros-cons")
         self._keys_dict = {0: 'pros', 1: 'cons'}
 
     def _get_information(self):
+        """
+        Iterates over both divs pros and cons, builds an array with all the pros and all the cons, and returns a dict
+        with the type {pros: [...pros], cons: [...cons]}.
+        """
         pros_cons = []
         pros_cons_dict = {}
 
@@ -99,21 +129,26 @@ class ProsAndConsTabScrapper(TabScrapper):
 
 
 class ReviewsTabScrapper(TabScrapper):
+    """Class that knows how to scrap the data from the Reviews tab."""
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-reviews")
 
     def _get_information(self):
+        """Takes all the reviews in the tab, and returns an array with all of them."""
         return [review_element.text for review_element in self._tab.find_all("div", class_="review-text")]
 
 
 class WeatherTabScrapper(TabScrapper):
+    """Class that knows how to scrap the data from the Weather tab."""
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-weather")
         self.climate_table = self._tab.find("table", class_="climate")
 
     def _get_information(self):
+        """Takes all the value from the weather matrix, and builds a dict with tuples for each weather attribute.
+        Then, returns the dict."""
         weather_dict = {}
         table_body = self.climate_table
 
@@ -130,37 +165,44 @@ class WeatherTabScrapper(TabScrapper):
 
 
 class PhotosTabScrapper(TabScrapper):
+    """Class that knows how to scrap data from the Photos tab."""
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-photos")
 
     def _get_information(self):
+        """Takes all the pictures from the tab, and returns an array with all of them."""
         return [photo.attrs["data-src"] for photo in self._tab.find_all("img", class_="lazyload")]
 
 
 class CityGridTabScrapper(TabScrapper):
+    """Class that knows how to handle tabs with a grid of cities.."""
     def _get_text(self, city):
         return city.find("div", class_="text").h3.a.text.replace(LATIN1_NON_BREAKING_SPACE, u' ')
 
     def _get_information(self):
+        """Takes all the names of the cities in the grid. Returns an array with all the names."""
         grid = self._tab.find("div", class_="details grid show")
         cities = grid.find_all("li", attrs={'data-type': 'city'})
         return [self._get_text(city) for city in cities]
 
 
 class NearTabScrapper(CityGridTabScrapper):
+    """Class that knows how to scrap data from the Near tab."""
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-near")
 
 
 class NextTabScrapper(CityGridTabScrapper):
+    """Class that knows how to scrap data from the Next tab."""
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-next")
 
 
 class SimilarTabScrapper(CityGridTabScrapper):
+    """Class that knows how to scrap data from the Similar tab."""
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-similar")
