@@ -28,8 +28,14 @@ class TabScrapper:
         else:
             return issubclass(dynamic_tab_scrapper, TabScrapper)
 
-    def get_information(self):
+    def _get_information(self):
         pass
+
+    def get_information(self):
+        try:
+            return self._get_information()
+        except(AttributeError, KeyError) as e:
+            self._logger.error(f"Error scrapping the tab information: {e}")
 
 
 class KeyValueTabScrapper(TabScrapper):
@@ -39,18 +45,15 @@ class KeyValueTabScrapper(TabScrapper):
     def _get_value(self, value_column):
         return value_column.text
 
-    def get_information(self):
-        try:
-            info_dict = {}
-            table = self._tab.find('table', class_='details')
-            for row in table.find_all('tr'):
-                row_key, row_value = row.find(class_='key'), row.find(class_='value')
-                key, value = self._get_key(row_key), self._get_value(row_value)
-                info_dict.update({key: value})
+    def _get_information(self):
+        info_dict = {}
+        table = self._tab.find('table', class_='details')
+        for row in table.find_all('tr'):
+            row_key, row_value = row.find(class_='key'), row.find(class_='value')
+            key, value = self._get_key(row_key), self._get_value(row_value)
+            info_dict.update({key: value})
 
-            return info_dict
-        except(AttributeError, KeyError) as e:
-            print(e)
+        return info_dict
 
 
 class ScoresTabScrapper(KeyValueTabScrapper):
@@ -81,21 +84,18 @@ class ProsAndConsTabScrapper(TabScrapper):
         self._tab = self._tab_scroller.find("div", class_="tab tab-pros-cons")
         self._keys_dict = {0: 'pros', 1: 'cons'}
 
-    def get_information(self):
-        try:
+    def _get_information(self):
+        pros_cons = []
+        pros_cons_dict = {}
+
+        for i, div in enumerate(self._tab.find_all("div")):
+            for p in div.find_all("p"):
+                pro_con = p.get_text(strip=True)
+                pros_cons.append(pro_con)
+            pros_cons_dict.update({self._keys_dict[i]: pros_cons})
             pros_cons = []
-            pros_cons_dict = {}
 
-            for i, div in enumerate(self._tab.find_all("div")):
-                for p in div.find_all("p"):
-                    pro_con = p.get_text(strip=True)
-                    pros_cons.append(pro_con)
-                pros_cons_dict.update({self._keys_dict[i]: pros_cons})
-                pros_cons = []
-
-            return pros_cons_dict
-        except(AttributeError, KeyError) as e:
-            print(e)
+        return pros_cons_dict
 
 
 class ReviewsTabScrapper(TabScrapper):
@@ -103,11 +103,8 @@ class ReviewsTabScrapper(TabScrapper):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-reviews")
 
-    def get_information(self):
-        try:
-            return [review_element.text for review_element in self._tab.find_all("div", class_="review-text")]
-        except(AttributeError, KeyError) as e:
-            print(e)
+    def _get_information(self):
+        return [review_element.text for review_element in self._tab.find_all("div", class_="review-text")]
 
 
 class WeatherTabScrapper(TabScrapper):
@@ -116,23 +113,20 @@ class WeatherTabScrapper(TabScrapper):
         self._tab = self._tab_scroller.find("div", class_="tab tab-weather")
         self.climate_table = self._tab.find("table", class_="climate")
 
-    def get_information(self):
-        try:
-            weather_dict = {}
-            table_body = self.climate_table
+    def _get_information(self):
+        weather_dict = {}
+        table_body = self.climate_table
 
-            rows = table_body.find_all('tr')
-            months = [col.get_text() for col in rows[0].find_all('td')[1:]]
-            for row in rows[1:]:
-                cols = row.find_all('td')
-                key = cols[0].get_text()
-                # TODO Get rid of empty values
-                # TODO Contemplate percents, imperial, metric and other units (now the value is all the text together)
-                weather_dict.update({key: [(months[i], col.get_text(strip=True)) for i, col in enumerate(cols[1:])]})
+        rows = table_body.find_all('tr')
+        months = [col.get_text() for col in rows[0].find_all('td')[1:]]
+        for row in rows[1:]:
+            cols = row.find_all('td')
+            key = cols[0].get_text()
+            # TODO Get rid of empty values
+            # TODO Contemplate percents, imperial, metric and other units (now the value is all the text together)
+            weather_dict.update({key: [(months[i], col.get_text(strip=True)) for i, col in enumerate(cols[1:])]})
 
-            return weather_dict
-        except(AttributeError, KeyError) as e:
-            print(e)
+        return weather_dict
 
 
 class PhotosTabScrapper(TabScrapper):
@@ -140,24 +134,18 @@ class PhotosTabScrapper(TabScrapper):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-photos")
 
-    def get_information(self):
-        try:
-            return [photo.attrs["data-src"] for photo in self._tab.find_all("img", class_="lazyload")]
-        except(AttributeError, KeyError) as e:
-            print(e)
+    def _get_information(self):
+        return [photo.attrs["data-src"] for photo in self._tab.find_all("img", class_="lazyload")]
 
 
 class CityGridTabScrapper(TabScrapper):
     def _get_text(self, city):
         return city.find("div", class_="text").h3.a.text.replace(LATIN1_NON_BREAKING_SPACE, u' ')
 
-    def get_information(self):
-        try:
-            grid = self._tab.find("div", class_="details grid show")
-            cities = grid.find_all("li", attrs={'data-type': 'city'})
-            return [self._get_text(city) for city in cities]
-        except(AttributeError, KeyError) as e:
-            print(e)
+    def _get_information(self):
+        grid = self._tab.find("div", class_="details grid show")
+        cities = grid.find_all("li", attrs={'data-type': 'city'})
+        return [self._get_text(city) for city in cities]
 
 
 class NearTabScrapper(CityGridTabScrapper):
@@ -182,10 +170,6 @@ def main():
     nomadlist_lisbon_url = "https://nomadlist.com/lisbon"
     nomadlist_lisbon_text = rq.get(nomadlist_lisbon_url).content
     nomadlist_lisbon_soup = BeautifulSoup(nomadlist_lisbon_text, "html.parser")
-
-    tab_scrapper_soup_object = TabScrapper(nomadlist_lisbon_soup)
-    tab_scrapper_tabs_dict = tab_scrapper_soup_object.get_information()
-    print(tab_scrapper_tabs_dict)
 
     scores_tab_scrapper_object = ScoresTabScrapper(nomadlist_lisbon_soup)
     print(scores_tab_scrapper_object.get_information())
@@ -217,6 +201,7 @@ def main():
     similar_tab_scrapper_object = SimilarTabScrapper(nomadlist_lisbon_soup)
     print(similar_tab_scrapper_object.get_information())
 
+    print("Lets got to sleep before starting again...")
     time.sleep(5)
 
 

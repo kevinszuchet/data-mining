@@ -34,11 +34,14 @@ class NomadListScrapper:
             with open("page_source.html", 'w+') as opened_file:
                 opened_file.write(page_source)
 
-        soup = BeautifulSoup(page_source, "html.parser")
-        self._logger.debug(f"This is the pretty page source: {soup.prettify()}")
-        cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
-        self._logger.debug(f"Cities lis: {cities_lis}")
-        return cities_lis
+        try:
+            soup = BeautifulSoup(page_source, "html.parser")
+            self._logger.debug(f"This is the pretty page source: {soup.prettify()}")
+            cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
+            self._logger.debug(f"Cities lis: {cities_lis}")
+            return cities_lis
+        except(AttributeError, KeyError) as e:
+            self._logger.error(f"Error trying to find all the cities in the page source: {e}")
 
     def _do_request(self, city_li):
         """Given the city li, takes the endpoint from the CityScrapper, and returns the result of making the request."""
@@ -68,6 +71,9 @@ class NomadListScrapper:
         for res in grequests.map(self._make_request_to_city_details(), size=CFG.NOMAD_LIST_REQUESTS_BATCH_SIZE):
             try:
                 details = self._get_city_details(res)
+                if details is None:
+                    self._logger.info(f"Nothing to append with this city :(")
+                    break
                 self._logger.info(f"Appending new details... {details}")
                 cities.append(details)
             except HTTPError as e:

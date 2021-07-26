@@ -78,6 +78,6 @@ class CityScrapper:
                 **tabs_information
             }
         except(AttributeError, KeyError) as e:
-            print(e)
+            self._logger.error(f"Error trying to get the city details: {e}")
 
 
