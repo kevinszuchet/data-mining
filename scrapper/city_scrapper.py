@@ -27,7 +27,7 @@ class CityScrapper:
 
     def valid_tag(self, city_li):
         """Given the city li, checks if the tag is valid."""
-        self._logger.debug(f"Validating the city li tag: {city_li.prettify()}")
+        # self._logger.debug(f"Validating the city li tag: {city_li.prettify()}")
         if city_li is None:
             return False
 

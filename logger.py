@@ -1,6 +1,14 @@
 import logging
 import sys
-from conf import LOG_FORMAT, LOG_FILE
+from conf import LOG_FORMAT, LOG_FILE, LOGGER_LEVEL
+
+LOGGER = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL,
+}
 
 
 class Logger:
@@ -9,13 +17,14 @@ class Logger:
         self.logger = logging.getLogger(__name__)
 
         # Set the level of the logger.
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(LOGGER[LOGGER_LEVEL])
 
         # Format the logs structure so that every line would include the time, name, level name and log message
         formatter = logging.Formatter(LOG_FORMAT)
 
         # Create a file handler and add it to logger
         file_handler = logging.FileHandler(LOG_FILE)
+
         # file_handler.setLevel(logging.ERROR)
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)

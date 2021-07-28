@@ -5,70 +5,95 @@ import os
 from requests import HTTPError
 from bs4 import BeautifulSoup
 from scrapper.city_scrapper import CityScrapper
-from scroller import Scroller
+import sys
 
 # TODO Adapter for Selenium Web Drivers + Context Manager
-
-headers = {
-    'user-agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.164 Safari/537.36",
-    'cookie': "ref=weremoto; visit-count=1; last_tested_internet_speed=2020-03-13_x; __stripe_mid=0adfa558-f217-49fe-8f7c-7c769760f498b8f7c4; visit-count=2; login_by_email_client_hash=6e693f5e751a957575c6c6bd664bba4a; login_url=https://nomadlist.com/?join=nomadlist; logged_in_hash=fccb1ad6e406b0111d55512cad8ae099_4885b578c08d502e2c6b6ae23d523bb26949c16e; ask_to_connect_instagram_hide=x; filters-folded=no; dark_mode=on; dark_mode_js_test=on; PHPSESSID=nba5obbj3eb9qn9pe2ch25evi1; last_tested_internet_speed=2021-07-25_x"
-}
 
 
 class NomadListScrapper:
     """Class responsible to handle the scrapper in the Nomad List site."""
 
-    def __init__(self, logger):
+    def __init__(self, logger, web_driver):
         self._base_url = CFG.NOMAD_LIST_URL
+        self._driver = web_driver
         self._logger = logger
+
+        # Information after scrapping
+        self._cities = []
+
+        # Beautiful soup
+        self._cities_lis = None
+
         self._city_scrapper = CityScrapper(self._logger)
+        self.page = None
 
-    def _get_page_source(self):
-        if os.path.exists("page_source.html") and os.getenv('ENV') != "production":
-            with open("page_source.html", 'r') as opened_file:
-                page_source = opened_file.read()
+    def load_html_from_disk(self):
+        """Attempts to load the html locally"""
+        try:
+            with open(CFG.PAGE_SOURCE, 'r') as opened_file:
+                self.page = opened_file.read()
+        except Exception as e:
+            self._logger.error(f'There was an error loading the html file on path : {CFG.PAGE_SOURCE}. Error: {e}')
+            sys.exit(1)
 
-            return page_source
+    def write_html_to_disk(self):
+        try:
+            with open(CFG.PAGE_SOURCE, 'w+') as opened_file:
+                opened_file.write(self.page)
+        except Exception as e:
+            self._logger.error(f'There was an error writing the html file on path : {CFG.PAGE_SOURCE}. Error: {e}')
+            sys.exit(1)
 
-        with Scroller(self._base_url, self._logger) as scroller:
-            page_source = scroller.scroll_to_the_end_and_get_page_source()
+    def fetch_website(self):
+        """Fetches the main website HTML"""
+        # Scroll to the end to add more cities
+        if CFG.SCROLL:
+            self._driver.scroll_to_the_end()
+        self.page = self._driver.get_page_source()
 
-        if page_source:
-            with open("page_source.html", 'w+') as opened_file:
-                opened_file.write(page_source)
-
-            return page_source
+    def _get_html(self):
+        """Gets the Main HTML file which contents will be scrapped"""
+        self._logger.info('Retrieving base Html file')
+        if os.path.exists(CFG.PAGE_SOURCE) and os.getenv('ENV') != "production" and CFG.LOAD_HTML_FROM_DISK:
+            self.load_html_from_disk()
+        else:
+            self.fetch_website()
+            self.write_html_to_disk()
 
     def _get_all_the_cities(self):
         """Scroll to the end of the main page fetching all the cities as li tags."""
         try:
-            page_source = self._get_page_source()
-
-            if page_source is None:
+            if self.page is None:
+                self._logger.error('The website is None')
                 return
 
-            soup = BeautifulSoup(page_source, "html.parser")
-            self._logger.debug(f"This is the pretty page source: {soup.prettify()}")
+            soup = BeautifulSoup(self.page, "html.parser")
+            self._logger.debug(f"Created Beautiful soup object from the HTML file")
             cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
-            self._logger.debug(f"Cities lis: {cities_lis}")
-            return cities_lis
+            self._logger.debug(f"Cities achieved")
+            self._cities_lis = cities_lis
         except(AttributeError, KeyError) as e:
             self._logger.error(f"Error trying to find all the cities in the page source: {e}")
+            sys.exit(1)
 
     def _do_request(self, city_li):
         """Given the city li, takes the endpoint from the CityScrapper, and returns the result of making the request."""
         url = f"{self._base_url}{self._city_scrapper.get_city_url(city_li)}"
-        res = grequests.get(url, headers=headers)
+        res = grequests.get(url, headers=CFG.HEADERS)
         self._logger.info(f"Request to {url} made, now is time to sleep before the next one...")
         time.sleep(CFG.NOMAD_LIST_DELAY_AFTER_REQUEST)
         return res
 
     def _make_request_to_city_details(self):
         """Checks if the lis are valid, takes the valid ones and make the requests to the city details page."""
-        cities = self._get_all_the_cities()
-        if cities is None:
-            return []
-        return (self._do_request(li) for li in cities if self._city_scrapper.valid_tag(li))
+        if self._cities_lis:
+            self._logger.debug(f'amount of Cities: {len(self._cities_lis)}')
+            self._logger.debug(f"Fetching more info for the cities")
+            city_details = (self._do_request(li) for li in self._cities if self._city_scrapper.valid_tag(li))
+            self._cities_details = city_details
+            self._logger.debug(f"More info Fetched properly")
+            return city_details
+        return self._cities
 
     def _get_city_details(self, res):
         city_details_html = res.content
@@ -85,8 +110,10 @@ class NomadListScrapper:
         Takes the cities from the home page, builds a dictionary for each one with the available information.
         Then, returns a list of dicts with all the cities.
         """
-        cities = []
+        self._get_html()
+        self._get_all_the_cities()
 
+        cities = []
         for res in grequests.map(self._make_request_to_city_details(), size=CFG.NOMAD_LIST_REQUESTS_BATCH_SIZE,
                                  exception_handler=self._exception_handler):
             try:
@@ -100,4 +127,5 @@ class NomadListScrapper:
                 self._logger.error(f"HTTPError raised: {e}")
             except Exception as e:
                 self._logger.error(f"Exception raised trying to get the city details: {e}")
+        self._driver.close_driver()
         return cities
