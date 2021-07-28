@@ -11,14 +11,19 @@ The goal is to _find the best place in the world to live, work and travel as a r
 ## Getting Started
 
 1. Clone the repo
+
    ```bash
    gh repo clone jonatankruszewski/data-mining
    ```
+
 2. Install dependencies
+
    ```bash
    pip3 install -r requirements.txt
    ```
+
 3. Run the scrapper
+
    ```bash
    python3 main.py
    ```
@@ -28,13 +33,24 @@ The goal is to _find the best place in the world to live, work and travel as a r
 You may configure an env var to make Selenium works. It needs the path to the chrome driver in your computer.
 
 For Linux users:
+
 ```bash
 export CHROME_DRIVER_PATH = '/path/to/chrome/driver'
 ```
 
 or
+
 ```bash
 CHROME_DRIVER_PATH='/path/to/chrome/driver' python3 main.py
+```
+
+For MacOs users:
+
+```bash
+brew install chromedriver
+
+#Grant access:
+xattr -d com.apple.quarantine /usr/local/bin/chromedriver
 ```
 
 ## Roadmap
@@ -47,7 +63,7 @@ CHROME_DRIVER_PATH='/path/to/chrome/driver' python3 main.py
 - Build a dashboard using ReDash
 
 ## Authors
+
 - David Demby ([@david613](https://github.com/david613))
 - Jonatan Kruszewski ([@jonatankruszewski](https://github.com/jonatankruszewski))
 - Kevin Szuchet ([@kevinszuchet](https://github.com/kevinszuchet))
-
