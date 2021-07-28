@@ -18,9 +18,9 @@ class CityScrapper:
         Given the tab and the soup object, dynamically builds a tab scrapper that depends on the name of the tab,
         and gets all the information of it. Then, returns that information as a dict "{tab_name: tab_information}"
         """
-        self._logger.info("Getting the tab information...")
+        # self._logger.info("Getting the tab information...")
         tab_name = TabScrapper.get_name(tab)
-        self._logger.debug(f"Tab with name {tab_name}: {tab}")
+        # self._logger.debug(f"Tab with name {tab_name}: {tab}")
         dynamic_tab_scrapper = eval(f"{tab_name}TabScrapper")
         # self._logger.debug(f"DynamicTabScrapper: {dynamic_tab_scrapper}")
         return dynamic_tab_scrapper(city_details_soup, logger=self._logger).get_information()
@@ -58,7 +58,7 @@ class CityScrapper:
 
             if not text:
                 return
-
+            self._logger.info('Fetching tabs info...')
             city = text.h1.text if text.h1 else "-"
             country = text.h2.text if text.h2 else "-"
 
@@ -68,7 +68,6 @@ class CityScrapper:
                                 for tab in tabs if TabScrapper.is_valid(tab)}
             # self._logger.debug(f"City details - Tabs Information: {tabs_information}")
             # self._logger.info(f"All the information about {city}, {country} was fetched!")
-            self._logger.info('Fetching tabs info...')
             # TODO get the rank
 
             return {

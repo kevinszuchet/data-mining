@@ -1,5 +1,4 @@
 import grequests
-import time
 import conf as CFG
 import os
 from requests import HTTPError
@@ -87,7 +86,7 @@ class NomadListScrapper:
     def _make_request_to_city_details(self):
         """Checks if the lis are valid, takes the valid ones and make the requests to the city details page."""
         self._logger.debug(f'amount of Cities: {len(self._cities_lis)}')
-        self._logger.debug(f"Fetching more info for the cities")
+        self._logger.debug(f"Fetching more info for the cities.... This might take time.")
         cities_urls = (grequests.get(f"{self._base_url}{self._city_scrapper.get_city_url(x)}", headers=CFG.HEADERS) for
                        x in self._cities_lis if self._city_scrapper.valid_tag(x))
         self._cities_details = (grequests.map(cities_urls, size=CFG.NOMAD_LIST_REQUESTS_BATCH_SIZE,
@@ -119,7 +118,7 @@ class NomadListScrapper:
                 if details is None:
                     self._logger.info(f"Nothing to append with this city :(")
                     break
-                self._logger.info(f"Appending new details... {details}")
+                self._logger.info(f"Appending new details...")
                 self._cities.append(details)
             except HTTPError as e:
                 self._logger.error(f"HTTPError raised: {e}")
