@@ -111,4 +111,4 @@ Some the intended functionality of this program are:
 - Kevin Szuchet ([@kevinszuchet](https://github.com/kevinszuchet))
 
 ## Support
-If you have any queries regarding this program, please feel free to contact on of the authors.
+If you have any queries regarding this program, please feel free to contact one of the authors.
