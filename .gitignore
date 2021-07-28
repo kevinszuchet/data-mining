@@ -133,3 +133,5 @@ dmypy.json
 # HTML files (like the nomad list page source)
 *.html
 ./scrapped_tests
+data.json
+logs.log
