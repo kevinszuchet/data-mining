@@ -62,6 +62,15 @@ xattr -d com.apple.quarantine /usr/local/bin/chromedriver
 - Deploy the code to AWS
 - Build a dashboard using ReDash
 
+## Usage
+
+```sh
+python3 main.py
+```
+
+The scrapping might take about 11 minutes on a MacBook Pro 2019.
+Times might defer according to your setup.
+
 ## Authors
 
 - David Demby ([@david613](https://github.com/david613))
