@@ -19,7 +19,8 @@ class WebDriver:
         return self._driver.get(self._base_url)
 
     def close_driver(self):
-        return self._driver.close()
+        self._logger.info('Closing Driver')
+        self._driver.quit()
 
     def _get_scroll_height(self):
         """Takes the scroll height of the document executing javascript in the browser."""

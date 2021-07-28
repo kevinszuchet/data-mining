@@ -24,8 +24,14 @@ class NomadListScrapper:
         # Beautiful soup
         self._cities_lis = None
 
+        # David's
+        self._cities_details = None
         self._city_scrapper = CityScrapper(self._logger)
         self.page = None
+        self.get_cities()
+
+    def get_cities_info(self):
+        return self._cities
 
     def load_html_from_disk(self):
         """Attempts to load the html locally"""
@@ -86,14 +92,11 @@ class NomadListScrapper:
 
     def _make_request_to_city_details(self):
         """Checks if the lis are valid, takes the valid ones and make the requests to the city details page."""
-        if self._cities_lis:
-            self._logger.debug(f'amount of Cities: {len(self._cities_lis)}')
-            self._logger.debug(f"Fetching more info for the cities")
-            city_details = (self._do_request(li) for li in self._cities if self._city_scrapper.valid_tag(li))
-            self._cities_details = city_details
-            self._logger.debug(f"More info Fetched properly")
-            return city_details
-        return self._cities
+        self._logger.debug(f'amount of Cities: {len(self._cities_lis)}')
+        self._logger.debug(f"Fetching more info for the cities")
+        city_details = (self._do_request(li) for li in self._cities_lis if self._city_scrapper.valid_tag(li))
+        self._cities_details = city_details
+        self._logger.debug(f"More details fetched")
 
     def _get_city_details(self, res):
         city_details_html = res.content
@@ -112,9 +115,9 @@ class NomadListScrapper:
         """
         self._get_html()
         self._get_all_the_cities()
+        self._make_request_to_city_details()
 
-        cities = []
-        for res in grequests.map(self._make_request_to_city_details(), size=CFG.NOMAD_LIST_REQUESTS_BATCH_SIZE,
+        for res in grequests.map(self._cities_details, size=CFG.NOMAD_LIST_REQUESTS_BATCH_SIZE,
                                  exception_handler=self._exception_handler):
             try:
                 details = self._get_city_details(res)
@@ -122,10 +125,11 @@ class NomadListScrapper:
                     self._logger.info(f"Nothing to append with this city :(")
                     break
                 self._logger.info(f"Appending new details... {details}")
-                cities.append(details)
+                self._cities.append(details)
             except HTTPError as e:
                 self._logger.error(f"HTTPError raised: {e}")
             except Exception as e:
                 self._logger.error(f"Exception raised trying to get the city details: {e}")
         self._driver.close_driver()
-        return cities
+        self._logger.info('Scrapping finished')
+        return

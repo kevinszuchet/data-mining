@@ -22,7 +22,7 @@ class CityScrapper:
         tab_name = TabScrapper.get_name(tab)
         self._logger.debug(f"Tab with name {tab_name}: {tab}")
         dynamic_tab_scrapper = eval(f"{tab_name}TabScrapper")
-        self._logger.debug(f"DynamicTabScrapper: {dynamic_tab_scrapper}")
+        # self._logger.debug(f"DynamicTabScrapper: {dynamic_tab_scrapper}")
         return dynamic_tab_scrapper(city_details_soup, logger=self._logger).get_information()
 
     def valid_tag(self, city_li):
@@ -54,8 +54,7 @@ class CityScrapper:
         try:
             city_details_soup = BeautifulSoup(city_details_html, "html.parser")
             text = city_details_soup.find(class_="text")
-
-            self._logger.debug(f"City details - <div class=\"text\">...<div>: {text}")
+            # self._logger.debug(f"City details - <div class=\"text\">...<div>: {text}")
 
             if not text:
                 return
@@ -67,10 +66,9 @@ class CityScrapper:
             self._logger.debug(f"City details - Tabs: {tabs}")
             tabs_information = {TabScrapper.get_name(tab): self._get_tab_information(tab, city_details_soup)
                                 for tab in tabs if TabScrapper.is_valid(tab)}
-            self._logger.debug(f"City details - Tabs Information: {tabs_information}")
-
-            self._logger.info(f"All the information about {city}, {country} was fetched!")
-
+            # self._logger.debug(f"City details - Tabs Information: {tabs_information}")
+            # self._logger.info(f"All the information about {city}, {country} was fetched!")
+            self._logger.info('Fetching tabs info...')
             # TODO get the rank
 
             return {

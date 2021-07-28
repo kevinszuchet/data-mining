@@ -11,7 +11,8 @@ def main():
     logger = Logger().logger
     web_driver = WebDriver(logger, NOMAD_LIST_URL)
     try:
-        cities = NomadListScrapper(logger, web_driver).get_cities()
+        nomad_scrapper = NomadListScrapper(logger, web_driver)
+        cities = nomad_scrapper.get_cities_info()
         logger.info(f"Finished Scrapping Cities")
     except Exception as e:
         # exc_info=True to log the traceback
