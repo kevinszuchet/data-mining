@@ -32,24 +32,18 @@ class WebDriver:
         self._driver.get(self._base_url)
         scroll_height = self._get_scroll_height()
         self._logger.info(f"Initial scroll height: {scroll_height}")
-
+        self._logger.info("Scrolling down...")
         while True:
             try:
                 # Scroll down to bottom
-                self._logger.info("Scroll down to the bottom...")
                 self._driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                self._logger.info(f"Time to sleep, see you in {CFG.NOMAD_LIST_SCROLL_PAUSE_TIME} seconds...")
 
                 # Wait to load page
                 time.sleep(CFG.NOMAD_LIST_SCROLL_PAUSE_TIME)
 
                 # Calculate new scroll height and compare with last scroll height
-                self._logger.info("Getting the new scroll height...")
                 new_scroll_height = self._get_scroll_height()
-                self._logger.info(f"Old scroll height: {scroll_height} - New scroll height: {new_scroll_height}")
-
-                self._logger.info(f"Checking if scroll heights {new_scroll_height} == {scroll_height}")
-                if new_scroll_height == scroll_height:
+                if new_scroll_height == scroll_height and new_scroll_height > CFG.MINIMUM_SCROLL:
                     # If scroll heights are the same, it'll break the loop
                     break
                 scroll_height = new_scroll_height

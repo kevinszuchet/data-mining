@@ -63,7 +63,7 @@ class CityScrapper:
             country = text.h2.text if text.h2 else "-"
 
             tabs = city_details_soup.find("div", class_="tabs").find("div", class_="ul").find_all("h2", class_="li")
-            self._logger.debug(f"City details - Tabs: {tabs}")
+            # self._logger.debug(f"City details - Tabs: {tabs}")
             tabs_information = {TabScrapper.get_name(tab): self._get_tab_information(tab, city_details_soup)
                                 for tab in tabs if TabScrapper.is_valid(tab)}
             # self._logger.debug(f"City details - Tabs Information: {tabs_information}")

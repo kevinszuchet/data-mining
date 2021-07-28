@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from scrapper.city_scrapper import CityScrapper
 import sys
 
+
 # TODO Adapter for Selenium Web Drivers + Context Manager
 
 
@@ -65,6 +66,7 @@ class NomadListScrapper:
         else:
             self.fetch_website()
             self.write_html_to_disk()
+            self._logger.info('New Html written to disk')
 
     def _get_all_the_cities(self):
         """Scroll to the end of the main page fetching all the cities as li tags."""
@@ -82,20 +84,14 @@ class NomadListScrapper:
             self._logger.error(f"Error trying to find all the cities in the page source: {e}")
             sys.exit(1)
 
-    def _do_request(self, city_li):
-        """Given the city li, takes the endpoint from the CityScrapper, and returns the result of making the request."""
-        url = f"{self._base_url}{self._city_scrapper.get_city_url(city_li)}"
-        res = grequests.get(url, headers=CFG.HEADERS)
-        self._logger.info(f"Request to {url} made, now is time to sleep before the next one...")
-        time.sleep(CFG.NOMAD_LIST_DELAY_AFTER_REQUEST)
-        return res
-
     def _make_request_to_city_details(self):
         """Checks if the lis are valid, takes the valid ones and make the requests to the city details page."""
         self._logger.debug(f'amount of Cities: {len(self._cities_lis)}')
         self._logger.debug(f"Fetching more info for the cities")
-        city_details = (self._do_request(li) for li in self._cities_lis if self._city_scrapper.valid_tag(li))
-        self._cities_details = city_details
+        cities_urls = (grequests.get(f"{self._base_url}{self._city_scrapper.get_city_url(x)}", headers=CFG.HEADERS) for
+                       x in self._cities_lis if self._city_scrapper.valid_tag(x))
+        self._cities_details = (grequests.map(cities_urls, size=CFG.NOMAD_LIST_REQUESTS_BATCH_SIZE,
+                                              exception_handler=self._exception_handler))
         self._logger.debug(f"More details fetched")
 
     def _get_city_details(self, res):
@@ -117,8 +113,7 @@ class NomadListScrapper:
         self._get_all_the_cities()
         self._make_request_to_city_details()
 
-        for res in grequests.map(self._cities_details, size=CFG.NOMAD_LIST_REQUESTS_BATCH_SIZE,
-                                 exception_handler=self._exception_handler):
+        for res in self._cities_details:
             try:
                 details = self._get_city_details(res)
                 if details is None:
