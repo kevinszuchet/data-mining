@@ -53,7 +53,6 @@ class NomadListScrapper:
         if CFG.SCROLL:
             self._driver.scroll_to_the_end()
         self.page = self._driver.get_page_source()
-        self._driver.close()
 
     def _get_html(self):
         """Gets the Main HTML file which contents will be scrapped"""
@@ -124,5 +123,6 @@ class NomadListScrapper:
                 self._logger.error(f"HTTPError raised: {e}")
             except Exception as e:
                 self._logger.error(f"Exception raised trying to get the city details: {e}")
+        self._driver.close()
         self._logger.info('Scrapping finished')
         return
