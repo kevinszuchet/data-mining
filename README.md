@@ -49,19 +49,30 @@ Before running the program it is recommended that the following installation ste
    ```bash
    pip3 install -r requirements.txt
    ```
-   
-### Environment Variables
+
+### Configurations
 
 You may configure an env var to make Selenium works. Selenium, in order to run, needs the path to the chrome driver 
 in your computer.
 
 For Linux users:
+
 ```bash
 export CHROME_DRIVER_PATH = '/path/to/chrome/driver'
 ```
 or
+
 ```bash
 CHROME_DRIVER_PATH='/path/to/chrome/driver' python3 main.py
+```
+
+For MacOs users:
+
+```bash
+brew install chromedriver
+
+#Grant access:
+xattr -d com.apple.quarantine /usr/local/bin/chromedriver
 ```
 
 ## Usage
@@ -93,7 +104,6 @@ _main.py_.
 ## Project Status
 Project is: _in progress_
 
-
 ## Roadmap
 This project is at the first check point of the roadmap and further developments will be released in the near future. 
 Some the intended functionality of this program are:
@@ -106,6 +116,7 @@ Some the intended functionality of this program are:
 - Build a dashboard using ReDash
 
 ## Authors
+
 - David Demby ([@david613](https://github.com/david613))
 - Jonatan Kruszewski ([@jonatankruszewski](https://github.com/jonatankruszewski))
 - Kevin Szuchet ([@kevinszuchet](https://github.com/kevinszuchet))
