@@ -5,10 +5,11 @@ from bs4 import BeautifulSoup
 
 class CityScrapper:
     """Class that knows how to get data from each city."""
-    action_regex = re.compile(r'(label|rating)-(\w+)-score')
-
     # To avoid cities lis with 'data-slug="{slugName}"'
     city_template_re = re.compile(r'{\w+}')
+
+    # Rank regex
+    rank_re = re.compile(r'.*\(Rank #(\d+)\).*')
 
     def __init__(self, logger):
         self._logger = logger
@@ -68,11 +69,15 @@ class CityScrapper:
                                 for tab in tabs if TabScrapper.is_valid(tab)}
             # self._logger.debug(f"City details - Tabs Information: {tabs_information}")
             # self._logger.info(f"All the information about {city}, {country} was fetched!")
-            # TODO get the rank
+
+            scores_tab = city_details_soup.find("div", class_="tab tab-ranking show")
+            scores_details = scores_tab.find("table", class_="details")
+            rank, = self.rank_re.match(scores_details.find("td", class_="value").get_text()).groups()
 
             return {
                 'city': city,
                 'country': country,
+                'rank': int(rank),
                 **tabs_information
             }
         except(AttributeError, KeyError) as e:
