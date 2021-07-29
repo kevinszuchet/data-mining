@@ -18,9 +18,10 @@ def main():
         # exc_info=True to log the traceback
         logger.error(f"Exception raised: {e}")
         sys.exit(1)
-    with open(JSON_FILENAME, "w+") as opened_file:
-        json.dump(cities, opened_file, indent=2)
-    logger.info(f'Successfully saved {JSON_FILENAME}')
+    else:
+        with open(JSON_FILENAME, "w+") as opened_file:
+            json.dump(cities, opened_file, indent=2)
+        logger.info(f'Successfully saved {JSON_FILENAME}')
 
 
 if __name__ == "__main__":
