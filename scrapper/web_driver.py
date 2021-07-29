@@ -22,7 +22,7 @@ class WebDriver:
     def get_base_url(self):
         return self._driver.get(self._base_url)
 
-    def close_driver(self):
+    def close(self):
         self._logger.info('Closing Driver')
         self._driver.quit()
 

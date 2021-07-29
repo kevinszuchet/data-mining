@@ -56,6 +56,7 @@ class NomadListScrapper:
         if CFG.SCROLL:
             self._driver.scroll_to_the_end()
         self.page = self._driver.get_page_source()
+        self._driver.close()
 
     def _get_html(self):
         """Gets the Main HTML file which contents will be scrapped"""
@@ -85,10 +86,11 @@ class NomadListScrapper:
 
     def _make_request_to_city_details(self):
         """Checks if the lis are valid, takes the valid ones and make the requests to the city details page."""
-        self._logger.debug(f'amount of Cities: {len(self._cities_lis)}')
+        self._logger.debug(f'Number of Cities: {len(self._cities_lis)}')
         self._logger.debug(f"Fetching more info for the cities.... This might take time.")
-        cities_urls = (grequests.get(f"{self._base_url}{self._city_scrapper.get_city_url(x)}", headers=CFG.HEADERS) for
-                       x in self._cities_lis if self._city_scrapper.valid_tag(x))
+        cities_urls = (
+            grequests.get(f"{self._base_url}{self._city_scrapper.get_city_url(x)}", headers=CFG.HEADERS, stream=False)
+            for x in self._cities_lis if self._city_scrapper.valid_tag(x))
         self._cities_details = (grequests.map(cities_urls, size=CFG.NOMAD_LIST_REQUESTS_BATCH_SIZE,
                                               exception_handler=self._exception_handler))
         self._logger.debug(f"More details fetched")
@@ -115,6 +117,7 @@ class NomadListScrapper:
         for res in self._cities_details:
             try:
                 details = self._get_city_details(res)
+                res.close()
                 if details is None:
                     self._logger.info(f"Nothing to append with this city :(")
                     break
@@ -124,6 +127,5 @@ class NomadListScrapper:
                 self._logger.error(f"HTTPError raised: {e}")
             except Exception as e:
                 self._logger.error(f"Exception raised trying to get the city details: {e}")
-        self._driver.close_driver()
         self._logger.info('Scrapping finished')
         return
