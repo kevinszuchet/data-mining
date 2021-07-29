@@ -17,7 +17,7 @@ class Logger:
         self.logger = logging.getLogger(__name__)
 
         # Set the level of the logger.
-        self.logger.setLevel(LOGGER[LOGGER_LEVEL])
+        self.logger.setLevel(LOGGER.get(LOGGER_LEVEL, logging.ERROR))
 
         # Format the logs structure so that every line would include the time, name, level name and log message
         formatter = logging.Formatter(LOG_FORMAT)
