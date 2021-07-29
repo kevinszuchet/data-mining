@@ -11,6 +11,10 @@ class WebDriver:
         self._driver = webdriver.Chrome(CFG.CHROME_DRIVER_PATH) if CFG.CHROME_DRIVER_PATH else webdriver.Chrome()
         self._driver.get(self._base_url)
 
+    def _get_scroll_height(self):
+        """Takes the scroll height of the document executing javascript in the browser."""
+        return self._driver.execute_script("return document.body.scrollHeight")
+
     def get_page_source(self):
         """Returns the Html file"""
         return self._driver.page_source
@@ -26,10 +30,9 @@ class WebDriver:
         """Scroll to the end of the main page and returns all the source code."""
         self._logger.info('Initializing Scrolling')
         self._driver.get(self._base_url)
-        scroll_height = self._get_scroll_height()
         self._logger.info("Scrolling down...")
         # Get scroll height
-        last_height = self._driver.execute_script("return document.body.scrollHeight")
+        last_height = self._get_scroll_height()
 
         while True:
             # Scroll down to bottom
@@ -40,8 +43,8 @@ class WebDriver:
             time.sleep(CFG.NOMAD_LIST_SCROLL_PAUSE_TIME)
 
             # Calculate new scroll height and compare with last scroll height
-            new_height = self._driver.execute_script("return document.body.scrollHeight")
-            if new_height == last_height and new_height > CFG.MINIMUM_SCROLL:
+            new_height = self._get_scroll_height()
+            if new_height == last_height:
                 break
             last_height = new_height
 
