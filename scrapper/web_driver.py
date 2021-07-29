@@ -3,6 +3,8 @@ import conf as CFG
 import time
 
 
+# TODO Context Manager
+
 class WebDriver:
     def __init__(self, logger, base_url):
         self._base_url = base_url
@@ -49,4 +51,3 @@ class WebDriver:
             last_height = new_height
 
         self._logger.info('Finished scrolling')
-

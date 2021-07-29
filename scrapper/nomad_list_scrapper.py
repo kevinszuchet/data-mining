@@ -7,9 +7,6 @@ from scrapper.city_scrapper import CityScrapper
 import sys
 
 
-# TODO Adapter for Selenium Web Drivers + Context Manager
-
-
 class NomadListScrapper:
     """Class responsible to handle the scrapper in the Nomad List site."""
 
