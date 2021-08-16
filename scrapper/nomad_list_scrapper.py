@@ -21,6 +21,7 @@ class NomadListScrapper:
         # Beautiful soup
         self._cities_lis = None
 
+        # TODO ???????
         # David's
         self._cities_details = None
         self._city_scrapper = CityScrapper(self._logger)
