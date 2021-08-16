@@ -9,6 +9,8 @@ class MySQLConnector:
         self._logger = logger
         self._client = self._connection()
 
+    # Context manager adapter?
+
     @staticmethod
     def _connection():
         """Knows how to connect to the MySQL Database."""
