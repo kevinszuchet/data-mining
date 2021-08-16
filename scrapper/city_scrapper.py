@@ -8,9 +8,6 @@ class CityScrapper:
     # To avoid cities lis with 'data-slug="{slugName}"'
     city_template_re = re.compile(r'{\w+}')
 
-    # Rank regex
-    rank_re = re.compile(r'.*\(Rank #(\d+)\).*')
-
     def __init__(self, logger):
         self._logger = logger
 
@@ -60,8 +57,6 @@ class CityScrapper:
             if not text:
                 return
             self._logger.info('Fetching tabs info...')
-            city = text.h1.text if text.h1 else "-"
-            country = text.h2.text if text.h2 else "-"
 
             tabs = city_details_soup.find("div", class_="tabs").find("div", class_="ul").find_all("h2", class_="li")
             # self._logger.debug(f"City details - Tabs: {tabs}")
@@ -70,14 +65,11 @@ class CityScrapper:
             # self._logger.debug(f"City details - Tabs Information: {tabs_information}")
             # self._logger.info(f"All the information about {city}, {country} was fetched!")
 
-            scores_tab = city_details_soup.find("div", class_="tab tab-ranking show")
-            scores_details = scores_tab.find("table", class_="details")
-            rank, = self.rank_re.match(scores_details.find("td", class_="value").get_text()).groups()
-
             return {
-                'city': city,
-                'country': country,
-                'rank': int(rank),
+                'city': text.h1.text if text.h1 else "-",
+                'country': text.h2.text if text.h2 else "-",
+                'continent': DigitalNomadGuideTabScrapper(city_details_soup).get_continent(),
+                'rank': int(ScoresTabScrapper(city_details_soup).get_rank()),
                 **tabs_information
             }
         except(AttributeError, KeyError) as e:

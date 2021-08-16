@@ -1,7 +1,7 @@
 import time
-
-from bs4 import BeautifulSoup
+import re
 import requests as rq
+from bs4 import BeautifulSoup
 from logger import Logger
 
 LATIN1_NON_BREAKING_SPACE = u'\xa0'
@@ -78,14 +78,23 @@ class KeyValueTabScrapper(TabScrapper):
 class ScoresTabScrapper(KeyValueTabScrapper):
     """Class that knows how to scrap the data from the Scores tab."""
 
+    # Rank regex
+    rank_re = re.compile(r'.*\(Rank #(\d+)\).*')
+
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
-        self._tab = self._tab_scroller.find("div", class_="tab tab-ranking show")
+        self._tab = self._tab_scroller.find("div", class_="tab tab-ranking")
 
     def _get_value(self, value_column):
         """Override the super class method. Given the value column it takes and returns the text of the value."""
         # TODO get Rating Value, Best Rating, and Width
         return value_column.div.div.text
+
+    def get_rank(self):
+        """Given the city details soup, knows how to take the rank number."""
+        details = self._tab.find("table", class_="details")
+        rank, = self.rank_re.match(details.find("td", class_="value").get_text()).groups()
+        return rank
 
 
 class DigitalNomadGuideTabScrapper(KeyValueTabScrapper):
@@ -95,9 +104,14 @@ class DigitalNomadGuideTabScrapper(KeyValueTabScrapper):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-digital-nomad-guide")
 
+    def get_continent(self):
+        """Given the city details soup, knows how to take the rank number."""
+        return self._tab.find("table", class_="details").find("td", class_="value").get_text()
+
 
 class CostOfLivingTabScrapper(KeyValueTabScrapper):
     """Class that knows how to scrap the data from the Cost of Living tab."""
+
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab editable tab-cost-of-living double-width")
@@ -105,6 +119,7 @@ class CostOfLivingTabScrapper(KeyValueTabScrapper):
 
 class ProsAndConsTabScrapper(TabScrapper):
     """Class that knows how to scrap the data from the Pros and Cons tab."""
+
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-pros-cons")
@@ -130,6 +145,7 @@ class ProsAndConsTabScrapper(TabScrapper):
 
 class ReviewsTabScrapper(TabScrapper):
     """Class that knows how to scrap the data from the Reviews tab."""
+
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-reviews")
@@ -141,6 +157,7 @@ class ReviewsTabScrapper(TabScrapper):
 
 class WeatherTabScrapper(TabScrapper):
     """Class that knows how to scrap the data from the Weather tab."""
+
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-weather")
@@ -166,6 +183,7 @@ class WeatherTabScrapper(TabScrapper):
 
 class PhotosTabScrapper(TabScrapper):
     """Class that knows how to scrap data from the Photos tab."""
+
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-photos")
@@ -177,6 +195,7 @@ class PhotosTabScrapper(TabScrapper):
 
 class CityGridTabScrapper(TabScrapper):
     """Class that knows how to handle tabs with a grid of cities.."""
+
     def _get_text(self, city):
         return city.find("div", class_="text").h3.a.text.replace(LATIN1_NON_BREAKING_SPACE, u' ')
 
@@ -189,6 +208,7 @@ class CityGridTabScrapper(TabScrapper):
 
 class NearTabScrapper(CityGridTabScrapper):
     """Class that knows how to scrap data from the Near tab."""
+
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-near")
@@ -196,6 +216,7 @@ class NearTabScrapper(CityGridTabScrapper):
 
 class NextTabScrapper(CityGridTabScrapper):
     """Class that knows how to scrap data from the Next tab."""
+
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-next")
@@ -203,6 +224,7 @@ class NextTabScrapper(CityGridTabScrapper):
 
 class SimilarTabScrapper(CityGridTabScrapper):
     """Class that knows how to scrap data from the Similar tab."""
+
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-similar")
