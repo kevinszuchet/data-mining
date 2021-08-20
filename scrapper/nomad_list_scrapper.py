@@ -4,6 +4,7 @@ import os
 from requests import HTTPError
 from bs4 import BeautifulSoup
 from scrapper.city_scrapper import CityScrapper
+from db.mysql_connector import MySQLConnector
 import sys
 
 
@@ -119,6 +120,7 @@ class NomadListScrapper:
                     self._logger.info(f"Nothing to append with this city :(")
                     break
                 self._logger.info(f"Appending new details...")
+                MySQLConnector.insert_city_info(details)
                 self._cities.append(details)
             except HTTPError as e:
                 self._logger.error(f"HTTPError raised: {e}")

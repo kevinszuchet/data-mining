@@ -5,6 +5,13 @@ from scrapper.nomad_list_scrapper import NomadListScrapper
 from conf import JSON_FILENAME, NOMAD_LIST_URL
 from logger import Logger
 from scrapper.web_driver import WebDriver
+from db.mysql_connector import MySQLConnector
+
+
+def run_create_database_schema():
+    logger = Logger().logger
+    mysqlconnector_object = MySQLConnector(logger)
+    MySQLConnector.create_database(mysqlconnector_object)
 
 
 def main():
@@ -25,4 +32,5 @@ def main():
 
 
 if __name__ == "__main__":
+    run_create_database_schema()
     main()

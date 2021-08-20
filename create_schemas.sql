@@ -70,16 +70,16 @@ CREATE TABLE IF NOT EXISTS `monthly_weathers_attributes` (
   `id_monthly_weather` int,
   `id_attribute` int,
   `value` varchar,
-  `description` varchar,
+  /*`description` varchar,*/
   PRIMARY KEY (`id`),
   FOREIGN KEY (`id_attribute`) REFERENCES `attributes`(`id`),
-  FOREIGN KEY (`id_weather`) REFERENCES `monthly_weathers`(`id`)
+  FOREIGN KEY (`id_monthly_weather`) REFERENCES `monthly_weathers`(`id`)
 );
 
 CREATE TABLE IF NOT EXISTS `reviews` (
   `id` int,
   `description` text,
-  `date` datetime,
+  /*`date` datetime,*/
   `id_city` int,
   PRIMARY KEY (`id`),
   FOREIGN KEY (`id_city`) REFERENCES `cities`(`id`),
@@ -90,8 +90,8 @@ CREATE TABLE IF NOT EXISTS `city_attributes` (
   `id_city` int,
   `id_attribute` int,
   `value` double,
-  `description` varchar,
-  `url` varchar,
+  /*`description` varchar,
+  `url` varchar,*/
   PRIMARY KEY (`id`),
   FOREIGN KEY (`id_city`) REFERENCES `cities`(`id`),
   FOREIGN KEY (`id_attribute`) REFERENCES `attributes`(`id`)
