@@ -83,7 +83,7 @@ class ScoresTabScrapper(KeyValueTabScrapper):
 
     def __init__(self, soup, **kwargs):
         super().__init__(soup, **kwargs)
-        self._tab = self._tab_scroller.find("div", class_="tab tab-ranking")
+        self._tab = self._tab_scroller.find("div", class_="tab tab-ranking show")
 
     def _get_value(self, value_column):
         """Override the super class method. Given the value column it takes and returns the text of the value."""
@@ -235,35 +235,35 @@ def main():
     nomadlist_lisbon_text = rq.get(nomadlist_lisbon_url).content
     nomadlist_lisbon_soup = BeautifulSoup(nomadlist_lisbon_text, "html.parser")
 
-    scores_tab_scrapper_object = ScoresTabScrapper(nomadlist_lisbon_soup)
-    print(scores_tab_scrapper_object.get_information())
+    scores_tab_scrapper = ScoresTabScrapper(nomadlist_lisbon_soup)
+    print(scores_tab_scrapper.get_information())
 
-    digital_nomad_guide_tab_scrapper_object = DigitalNomadGuideTabScrapper(nomadlist_lisbon_soup)
-    print(digital_nomad_guide_tab_scrapper_object.get_information())
+    digital_nomad_guide_tab_scrapper = DigitalNomadGuideTabScrapper(nomadlist_lisbon_soup)
+    print(digital_nomad_guide_tab_scrapper.get_information())
 
-    cost_of_living_tab_scrapper_object = CostOfLivingTabScrapper(nomadlist_lisbon_soup)
-    print(cost_of_living_tab_scrapper_object.get_information())
+    cost_of_living_tab_scrapper = CostOfLivingTabScrapper(nomadlist_lisbon_soup)
+    print(cost_of_living_tab_scrapper.get_information())
 
-    pros_and_cons_tab_scrapper_object = ProsAndConsTabScrapper(nomadlist_lisbon_soup)
-    print(pros_and_cons_tab_scrapper_object.get_information())
+    pros_and_cons_tab_scrapper = ProsAndConsTabScrapper(nomadlist_lisbon_soup)
+    print(pros_and_cons_tab_scrapper.get_information())
 
-    reviews_tab_scrapper_object = ReviewsTabScrapper(nomadlist_lisbon_soup)
-    print(reviews_tab_scrapper_object.get_information())
+    reviews_tab_scrapper = ReviewsTabScrapper(nomadlist_lisbon_soup)
+    print(reviews_tab_scrapper.get_information())
 
-    weather_tab_scrapper_object = WeatherTabScrapper(nomadlist_lisbon_soup)
-    print(weather_tab_scrapper_object.get_information())
+    weather_tab_scrapper = WeatherTabScrapper(nomadlist_lisbon_soup)
+    print(weather_tab_scrapper.get_information())
 
-    photos_tab_scrapper_object = PhotosTabScrapper(nomadlist_lisbon_soup)
-    print(photos_tab_scrapper_object.get_information())
+    photos_tab_scrapper = PhotosTabScrapper(nomadlist_lisbon_soup)
+    print(photos_tab_scrapper.get_information())
 
-    near_tab_scrapper_object = NearTabScrapper(nomadlist_lisbon_soup)
-    print(near_tab_scrapper_object.get_information())
+    near_tab_scrapper = NearTabScrapper(nomadlist_lisbon_soup)
+    print(near_tab_scrapper.get_information())
 
-    next_tab_scrapper_object = NextTabScrapper(nomadlist_lisbon_soup)
-    print(next_tab_scrapper_object.get_information())
+    next_tab_scrapper = NextTabScrapper(nomadlist_lisbon_soup)
+    print(next_tab_scrapper.get_information())
 
-    similar_tab_scrapper_object = SimilarTabScrapper(nomadlist_lisbon_soup)
-    print(similar_tab_scrapper_object.get_information())
+    similar_tab_scrapper = SimilarTabScrapper(nomadlist_lisbon_soup)
+    print(similar_tab_scrapper.get_information())
 
     print("Lets got to sleep before starting again...")
     time.sleep(5)
