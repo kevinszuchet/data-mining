@@ -23,7 +23,7 @@ class TabScrapper:
     @staticmethod
     def get_name(tab):
         """Given the html tag of the tab, returns the name of the tab."""
-        return tab.find("a").get_text(strip=True).replace(' ', '')
+        return tab.find("a").get_text(strip=True).title().replace(' ', '')
 
     @staticmethod
     def is_valid(tab):
