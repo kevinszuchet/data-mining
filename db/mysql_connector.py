@@ -1,5 +1,5 @@
 import pymysql
-from scrapper.conf import MYSQL
+from conf import MYSQL
 
 
 class MySQLConnector:
@@ -14,7 +14,7 @@ class MySQLConnector:
     @staticmethod
     def _connection():
         """Knows how to connect to the MySQL Database."""
-        conn_info = {'host': MYSQL.host, 'user': MYSQL.user, 'password': MYSQL.password, 'database': MYSQL.database}
+        conn_info = {'host': MYSQL['host'], 'user': MYSQL['user'], 'password': MYSQL['password'], 'database': MYSQL['database']}
         return pymysql.connect(**conn_info)
 
     def _create_database(self):
