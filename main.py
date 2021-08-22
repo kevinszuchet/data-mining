@@ -10,8 +10,8 @@ from db.mysql_connector import MySQLConnector
 
 def run_create_database_schema():
     logger = Logger().logger
-    mysqlconnector_object = MySQLConnector(logger)
-    MySQLConnector.create_database(mysqlconnector_object)
+    mysql_connector = MySQLConnector(logger)
+    MySQLConnector.create_database(mysql_connector)
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
     web_driver = WebDriver(logger, NOMAD_LIST_URL)
     try:
         nomad_scrapper = NomadListScrapper(logger, web_driver)
-        cities = nomad_scrapper.get_cities_info()
+        cities = nomad_scrapper.scrap_cities()
         logger.info(f"Finished Scrapping Cities")
     except Exception as e:
         # exc_info=True to log the traceback

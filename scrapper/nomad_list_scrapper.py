@@ -29,7 +29,7 @@ class NomadListScrapper:
         self.page = None
         self.get_cities()
 
-    def get_cities_info(self):
+    def scrap_cities(self):
         return self._cities
 
     def load_html_from_disk(self):
