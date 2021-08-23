@@ -42,7 +42,7 @@ Before running the program it is recommended that the following installation ste
 
 1. Clone the repo by running the following code in Git Bash
    ```bash
-   gh repo clone jonatankruszewski/data-mining
+   gh repo clone kevinszuchet/data-mining
    ```
 2. Install the dependencies (eg: Beautiful Soup, Requests, etc) required to run the program by executing the following 
    code in the Terminal (macOS/Linux) or Command Line (Windows):
