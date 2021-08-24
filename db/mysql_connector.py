@@ -345,3 +345,22 @@ class MySQLConnector:
             {f'rank <= {rank_to} AND ' if rank_to else ''}
         {f'LIMIT {num}' if num else ''} 
         """
+
+        with self._client.cursor() as cursor:
+            result = cursor.execute(query)
+
+        return result
+
+    def sort_cities_by(self, *args, by, order):
+        query = f"""
+        SELECT city.*
+        FROM cities city
+        {'JOIN countries country ON city.id_country = country.id' if by in ['country', 'continent'] else ''}
+        {'JOIN continents continent ON country.id_continent = continent.id' if by == 'continent' else ''}
+        ORDER BY {by} {order}
+        """
+
+        with self._client.cursor() as cursor:
+            result = cursor.execute(query)
+
+        return result
