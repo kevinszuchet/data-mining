@@ -14,7 +14,8 @@ class MySQLConnector:
     @staticmethod
     def _connection():
         """Knows how to connect to the MySQL Database."""
-        conn_info = {'host': MYSQL['host'], 'user': MYSQL['user'], 'password': MYSQL['password'], 'database': MYSQL['database']}
+        conn_info = {'host': MYSQL['host'], 'user': MYSQL['user'], 'password': MYSQL['password'],
+                     'database': MYSQL['database']}
         return pymysql.connect(**conn_info)
 
     def _create_database(self):
@@ -223,7 +224,7 @@ class MySQLConnector:
         for value in digitalnomadguide_attributes_value_list:
             nomadlist_database.execute("SELECT id FROM attributes WHERE name = '{0}' AND id_tab = '{1}';"
                                        .format(digitalnomadguide_attributes_name_list[counter],
-                                               id_tab_digitalnomadguide [0]))
+                                               id_tab_digitalnomadguide[0]))
             id_attribute = [i[0][0] if i else None for i in cursor.fetchall()]
 
             with nomadlist_database.cursor() as cursor:
@@ -322,8 +323,6 @@ class MySQLConnector:
         similar_name = [key for key, value in details.items() if "similar" in key.lower()]
         similar_values_list = [value for key, value in details.items() if "similar" in key.lower()]
 
-
-
         # Inserting PHOTOS VALUES/SRC into photos table
         for src in photos_src_list:
             with nomadlist_database.cursor() as cursor:
@@ -333,12 +332,16 @@ class MySQLConnector:
         # TODO: I STILL NEED TO DO STORAGE OF PROS AND CONS
         ##### Importing PROS AMD CONS info into database #####
 
-
-
-
-# def main():
-#
-#
-#
-# if __name__ == "__main__":
-#     main()
+    def filter_cities_by(self, *args, num=None, country=None, continent=None, rank_from=None, rank_to=None):
+        query = f"""
+        SELECT city.*
+        FROM cities city
+        {'JOIN countries country ON city.id_country = country.id' if country or continent else ''}
+        {'JOIN continents continent ON country.id_continent = continent.id' if country or continent else ''}
+        WHERE
+            {f'country.name = {country} AND ' if country else ''}
+            {f'continent.name = {continent} AND ' if continent else ''}
+            {f'rank >= {rank_from} AND ' if rank_from else ''}
+            {f'rank <= {rank_to} AND ' if rank_to else ''}
+        {f'LIMIT {num}' if num else ''} 
+        """
