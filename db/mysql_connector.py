@@ -106,6 +106,7 @@ class MySQLConnector:
         """
 
         ##### Importing CONTINENT info into database #####
+        # TODO: details['continent']
         continent = [value for key, value in details["DigitalNomadGuide"].items() if "continent" in key.lower()]
 
         # Inserting CONTINENT NAMES into continents table
@@ -115,6 +116,7 @@ class MySQLConnector:
         #       #       #       #       #       #       #       #       #       #       #       #       #       #
 
         ##### Importing COUNTRY info into database #####
+        # TODO: details['country']
         country = [value for key, value in details.items() if "country" in key.lower()]
 
         # Selecting the id of the continent in which the city resides
@@ -129,7 +131,9 @@ class MySQLConnector:
         #       #       #       #       #       #       #       #       #       #       #       #       #       #
 
         ##### Importing CITY and RANK info into database #####
+        # TODO: details['city']
         city = [value for key, value in details.items() if "city" in key.lower()]
+        # TODO: details['rank']
         rank = [value for key, value in details.items() if "rank" in key.lower()]
 
         # Selecting the id of the country in which the city resides
@@ -144,6 +148,7 @@ class MySQLConnector:
         #       #       #       #       #       #       #       #       #       #       #       #       #       #
 
         ##### Importing SCORES info into database #####
+        # TODO: details['scores'] (same for all different tabs scrappers keys)
         scores_name = [key for key, value in details.items() if "scores" in key.lower()]
 
         with nomadlist_database.cursor() as cursor:
