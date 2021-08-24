@@ -99,6 +99,7 @@ class CommandLineInterface:
         result = self._parsers[command]['method'](**inputs)
         print(result)
 
+    # TODO: join filter and sort
     @staticmethod
     def filter_by(*args, **kwargs):
         # TODO use the tabular printing (check Google Collab)
