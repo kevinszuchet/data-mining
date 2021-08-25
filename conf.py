@@ -25,6 +25,6 @@ HEADERS = {
 MYSQL = {
     'host': os.getenv('NOMAD_LIST_MYSQL_HOST') or 'localhost',
     'user': os.getenv('NOMAD_LIST_MYSQL_USER') or 'root',
-    'password': os.getenv('NOMAD_LIST_MYSQL_PASSWORD') or 'root',
+    'password': os.getenv('NOMAD_LIST_MYSQL_PASSWORD') or '',
     'database': os.getenv('NOMAD_LIST_MYSQL_DATABASE') or 'nomad_list'
 }

@@ -19,6 +19,7 @@ class MySQLConnector:
 
     def _create_database(self):
         """Creates the MySQL Nomadlist Schema in which to store all the scrapped data."""
+        # CLI: mysql -u root -p < create_schemas.sql
         try:
             nomadlist_database = self._client
 
