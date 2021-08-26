@@ -16,10 +16,6 @@ class WebDriver:
         """Takes the scroll height of the document executing javascript in the browser."""
         return self._driver.execute_script("return document.body.scrollHeight")
 
-    def get_page_source(self):
-        """Returns the Html file"""
-        return self._driver.page_source
-
     def get_base_url(self):
         return self._driver.get(self._base_url)
 
@@ -27,7 +23,7 @@ class WebDriver:
         self._logger.info('Closing Driver')
         self._driver.quit()
 
-    def scroll_to_the_end(self):
+    def get_page_source(self, scrolls=None):
         """Scroll to the end of the main page and returns all the source code."""
         self._logger.info('Initializing Scrolling')
         self._driver.get(self._base_url)
@@ -35,7 +31,9 @@ class WebDriver:
         # Get scroll height
         last_height = self._get_scroll_height()
 
-        while True:
+        num_of_scrolls = 1
+
+        while scrolls and scrolls <= num_of_scrolls:
             # Scroll down to bottom
             self._driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             self._logger.info(f"Scroll height: {last_height}")
@@ -48,5 +46,8 @@ class WebDriver:
             if new_height == last_height:
                 break
             last_height = new_height
+            num_of_scrolls += 1
 
         self._logger.info('Finished scrolling')
+
+        return self._driver.page_source
