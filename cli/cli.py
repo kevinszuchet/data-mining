@@ -1,5 +1,6 @@
 import argparse
 from db.mysql_connector import MySQLConnector
+from scrapper.nomad_list_scrapper import NomadListScrapper
 
 # TODO handle abbreviations
 import sys
@@ -17,9 +18,27 @@ class CommandLineInterface:
 
     def _load_parsers(self):
         self._parsers = {
+            'scrap': {
+                'method': CommandLineInterface.scrap_cities,
+                'help_message': 'Scrap specific cities from the Nomad List site.',
+                'params': [
+                    {
+                        'name': 'num',
+                        'positional': False,
+                        'type': int,
+                        'help': 'Number of required cities.'
+                    },
+                    {
+                        'name': 'scrolls',
+                        'positional': False,
+                        'type': int,
+                        'help': 'Number of scrolls to make in the site to fetch the cities cities.'
+                    },
+                ]
+            },
             'filter': {
                 'method': CommandLineInterface.filter_by,
-                'help_message': 'Take specific cities that match the filters.',
+                'help_message': 'Fetch stored cities that match the filters.',
                 'params': [
                     {
                         'name': 'num',
@@ -108,6 +127,11 @@ class CommandLineInterface:
     @staticmethod
     def sort_by(*args, **kwargs):
         # TODO use the tabular printing (check Google Collab)
+        return MySQLConnector().sort_cities_by(*args, **kwargs)
+
+    @staticmethod
+    def scrap_cities(*args, **kwargs):
+        NomadListScrapper()
         return MySQLConnector().sort_cities_by(*args, **kwargs)
 
 
