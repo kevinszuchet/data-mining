@@ -11,7 +11,6 @@ class WebDriver:
         self._logger = logger
         self._logger.info('Initializing the web_driver')
         self._driver = webdriver.Chrome(CFG.CHROME_DRIVER_PATH) if CFG.CHROME_DRIVER_PATH else webdriver.Chrome()
-        self._driver.get(self._base_url)
 
     def _get_scroll_height(self):
         """Takes the scroll height of the document executing javascript in the browser."""
