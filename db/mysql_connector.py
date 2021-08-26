@@ -20,6 +20,7 @@ class MySQLConnector:
 
     def _create_database(self):
         """Creates the MySQL Nomadlist Schema in which to store all the scrapped data."""
+        # CLI: mysql -u root -p < create_schemas.sql
         try:
             nomadlist_database = self._client
 
@@ -107,6 +108,8 @@ class MySQLConnector:
         """
 
         ##### Importing CONTINENT info into database #####
+
+
         # TODO: details['continent']
         continent = [value for key, value in details["DigitalNomadGuide"].items() if "continent" in key.lower()]
 
@@ -123,6 +126,7 @@ class MySQLConnector:
         # Selecting the id of the continent in which the city resides
         with nomadlist_database.cursor() as cursor:
             cursor.execute("SELECT id FROM continents WHERE name = '{0}';".format(continent[0]))
+            # TODO: id_continent, = cursor.fetchone()
             id_continent = [i[0][0] if i else None for i in cursor.fetchall()]
 
         # Inserting COUNTRY NAMES into countries table
