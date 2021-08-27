@@ -69,6 +69,23 @@ class CommandLineInterface:
                         'positional': False,
                         'type': int,
                         'help': 'To rank <rank-to>.'
+                    },
+                    {
+                        'name': 'sorted-by',
+                        'positional': False,
+                        'type': str,
+                        'help': 'Sorting criteria.',
+                        # TODO we could offer combinations (name, rank for example)
+                        'choices': ['rank', 'name', 'country', 'continent', 'cost', 'internet', 'fun', 'safety'],
+                        'default': 'rank'
+                    },
+                    {
+                        'name': 'order',
+                        'positional': False,
+                        'type': str,
+                        'help': 'Order of sorting.',
+                        'choices': ['ASC', 'DESC'],
+                        'default': 'ASC'
                     }
                 ]
             },
