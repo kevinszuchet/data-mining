@@ -23,7 +23,7 @@ class WebDriver:
         self._logger.info('Closing Driver')
         self._driver.quit()
 
-    def get_page_source(self, scrolls=None):
+    def get_page_source(self, scrolls=None, **kwargs):
         """Scroll to the end of the main page and returns all the source code."""
         self._logger.info('Initializing Scrolling')
         self._driver.get(self._base_url)
