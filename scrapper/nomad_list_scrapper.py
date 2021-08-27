@@ -7,7 +7,7 @@ from scrapper.city_scrapper import CityScrapper
 from db.mysql_connector import MySQLConnector
 import sys
 from logger import Logger
-from web_driver import WebDriver
+from scrapper.web_driver import WebDriver
 
 
 class NomadListScrapper:
