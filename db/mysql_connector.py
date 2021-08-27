@@ -14,7 +14,8 @@ class MySQLConnector:
     @staticmethod
     def _connection():
         """Knows how to connect to the MySQL Database."""
-        conn_info = {'host': MYSQL['host'], 'user': MYSQL['user'], 'password': MYSQL['password'], 'database': MYSQL['database']}
+        conn_info = {'host': MYSQL['host'], 'user': MYSQL['user'], 'password': MYSQL['password'],
+                     'database': MYSQL['database']}
         return pymysql.connect(**conn_info)
 
     def _create_database(self):
@@ -30,28 +31,83 @@ class MySQLConnector:
         except Error as e:
             print(e)
 
+    def _upsert_and_get_id(self, table, values_dict, domain_identifier=None):
+        """
+            Upsert a row in a table, and returns the id of it.
+            @param table str
+            @param values_dict dict
+            @param domain_identifier str|list|tuple
+
+            Given the table name, the values to upsert, and the optional domain_identifier,
+            tries to update the row in the table, unless it doesn't exist. If that happens, then inserts the row,
+            and returns its id.
+        """
+
+        columns = ', '.join(values_dict.keys())
+        print("columns", columns)
+
+        filters = [f"{key} = '{value}'" for key, value in values_dict.items() if
+                   domain_identifier is None or key == domain_identifier or key in domain_identifier]
+        print("filters", filters)
+        where_clause = ' AND'.join(filters)
+        print("where_clause", where_clause)
+        select_query = f"SELECT id, {columns} FROM {table} WHERE {where_clause};"
+        print("select_query", select_query)
+
+        values_tuple = tuple(values_dict.values())
+        print("values_tuple", values_tuple)
+
+        insert_query = f"""
+        INSERT IGNORE INTO {table}
+        ({columns})
+        VALUES ({', '.join(['%s'] * len(values_dict))})
+        """
+
+        update_query = f"""
+        UPDATE TABLE {table}
+        SET ({', '.join([f"{key} = '{value}'" for key, value in values_dict.items()])})
+        """
+
+        with self._client.cursor() as cursor:
+            cursor.execute(select_query)
+            result = cursor.fetchone()
+            print("result", result)
+
+            if result:
+                row_id, *other_values = result
+                print("row_id, *other_values", row_id, other_values)
+                differences = [other_value != values_tuple[i] for i, other_value in enumerate(other_values)]
+                print("differences", differences)
+
+                if any(differences):
+                    cursor.execute(update_query)
+                    self._client.commit()
+
+                return row_id
+
+            cursor.execute(insert_query, values_tuple)
+            self._client.commit()
+            row_id = cursor.lastrowid
+
+        print("row_id", row_id)
+        return row_id
+
     def insert_city_info(self, details):
+        id_continent = self._upsert_and_get_id("continents", {'name': details['continent']}, domain_identifier='name')
+
+        country = {'name': details['country'], 'id_continent': id_continent}
+        id_country = self._upsert_and_get_id("countries", country, domain_identifier='name')
+
+        city = {'name': details['city'], 'city_rank': details['rank'], 'id_country': id_country}
+        id_city = self._upsert_and_get_id("cities", city, domain_identifier='name')
+
+        # TODO: insert tabs information
+
+    def _insert_city_info(self, details):
         """Given the city, inserts all the necessary rows in the DB to store the scrapped data."""
         nomadlist_database = self._client
 
         # SQL Query statements for inserting scrapped data into the database:
-        insert_cities_query = """
-        INSERT IGNORE INTO cities
-        (name, rank, id_country)
-        VALUES (%s, %s, %s)        
-        """
-
-        insert_countries_query = """
-        INSERT IGNORE INTO countries
-        (name,id_continent)
-        VALUES (%s, %s)     
-        """
-
-        insert_continents_query = """
-        INSERT IGNORE INTO continents
-        (name)
-        VALUES (%s)        
-        """
 
         insert_city_attributes_query = """
         INSERT INTO city_attributes_
@@ -107,49 +163,6 @@ class MySQLConnector:
         """
 
         ##### Importing CONTINENT info into database #####
-
-
-        # TODO: details['continent']
-        continent = [value for key, value in details["DigitalNomadGuide"].items() if "continent" in key.lower()]
-
-        # Inserting CONTINENT NAMES into continents table
-        with nomadlist_database.cursor() as cursor:
-            cursor.executemany(insert_continents_query, [(continent[0])])
-            nomadlist_database.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-
-        ##### Importing COUNTRY info into database #####
-        # TODO: details['country']
-        country = [value for key, value in details.items() if "country" in key.lower()]
-
-        # Selecting the id of the continent in which the city resides
-        with nomadlist_database.cursor() as cursor:
-            cursor.execute("SELECT id FROM continents WHERE name = '{0}';".format(continent[0]))
-            # TODO: id_continent, = cursor.fetchone()
-            id_continent = [i[0][0] if i else None for i in cursor.fetchall()]
-
-        # Inserting COUNTRY NAMES into countries table
-        with nomadlist_database.cursor() as cursor:
-            cursor.executemany(insert_countries_query, [(country[0], id_continent[0])])
-            nomadlist_database.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-
-        ##### Importing CITY and RANK info into database #####
-        # TODO: details['city']
-        city = [value for key, value in details.items() if "city" in key.lower()]
-        # TODO: details['rank']
-        rank = [value for key, value in details.items() if "rank" in key.lower()]
-
-        # Selecting the id of the country in which the city resides
-        with nomadlist_database.cursor() as cursor:
-            cursor.execute("SELECT id FROM countries WHERE name = '{0}';".format(country[0]))
-            id_country = [i[0][0] if i else None for i in cursor.fetchall()]
-
-        # Inserting CITY NAMES and their RANKS into cities table
-        with nomadlist_database.cursor() as cursor:
-            cursor.executemany(insert_cities_query, [(city[0], rank[0], id_country[0])])
-            nomadlist_database.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
 
         ##### Importing SCORES info into database #####
         # TODO: details['scores'] (same for all different tabs scrappers keys)
@@ -227,7 +240,7 @@ class MySQLConnector:
         for value in digitalnomadguide_attributes_value_list:
             nomadlist_database.execute("SELECT id FROM attributes WHERE name = '{0}' AND id_tab = '{1}';"
                                        .format(digitalnomadguide_attributes_name_list[counter],
-                                               id_tab_digitalnomadguide [0]))
+                                               id_tab_digitalnomadguide[0]))
             id_attribute = [i[0][0] if i else None for i in cursor.fetchall()]
 
             with nomadlist_database.cursor() as cursor:
@@ -326,8 +339,6 @@ class MySQLConnector:
         similar_name = [key for key, value in details.items() if "similar" in key.lower()]
         similar_values_list = [value for key, value in details.items() if "similar" in key.lower()]
 
-
-
         # Inserting PHOTOS VALUES/SRC into photos table
         for src in photos_src_list:
             with nomadlist_database.cursor() as cursor:
@@ -336,9 +347,6 @@ class MySQLConnector:
         #       #       #       #       #       #       #       #       #       #       #       #       #       #
         # TODO: I STILL NEED TO DO STORAGE OF PROS AND CONS
         ##### Importing PROS AMD CONS info into database #####
-
-
-
 
 # def main():
 #
