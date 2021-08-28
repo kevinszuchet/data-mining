@@ -82,24 +82,18 @@ class MySQLConnector:
 
         return row_id
 
-    def _upsert_key_value_tab_info(self, id_city, tab_name, tab_info):
+    def _upsert_tab_and_attributes(self, tab_name, tab_info):
         """
-        Given the name of the table, and the values to insert, tries to insert or update the rows into the tab's table.
+        Given the name of the tab, and its information, takes all the attributes,
+        then creates the rows for the tab table and the attributes one.
+        Returns all the ids of those upserted attributes.
 
-        @param id_city: Id of the current city.
         @param tab_name: Name of the tab.
         @param tab_info: Tab information.
         """
 
         insert_tabs_query = "INSERT IGNORE INTO tabs (name) VALUES (%s)"
         insert_attributes_query = "INSERT IGNORE INTO attributes (name, id_tab) VALUES (%s, %s)"
-        insert_city_attributes_query = """
-        INSERT INTO city_attributes
-        (id_city, id_attribute, value, description, url) 
-        VALUES (%s, %s, %s) as new
-            ON DUPLICATE KEY UPDATE 
-                value = new.value, description = new.description, url = new.url
-        """
 
         with self._client.cursor() as cursor:
             # TODO: insert only once all the tabs names.
@@ -117,11 +111,93 @@ class MySQLConnector:
             # Selecting the ids of the ATTRIBUTE NAMES
             cursor.execute(f"SELECT id, name FROM attributes WHERE id_tab = '{id_tab}';")
             attributes = cursor.fetchall()
+        return attributes
 
+    def _upsert_key_value_tab_info(self, id_city, tab_name, tab_info):
+        """
+        Given the name of the table, and the values to insert, tries to insert or update the rows into the tab's table.
+
+        @param id_city: Id of the current city.
+        @param tab_name: Name of the tab.
+        @param tab_info: Tab information.
+        """
+
+        insert_city_attributes_query = """
+        INSERT INTO city_attributes
+        (id_city, id_attribute, description)
+        -- value, url 
+        VALUES (%s, %s, %s) as new
+            ON DUPLICATE KEY UPDATE 
+                description = new.description 
+                -- value = new.value, url = new.url
+        """
+
+        attributes = self._upsert_tab_and_attributes(tab_name, tab_info)
+
+        with self._client.cursor() as cursor:
             # Inserting {tab_name} ATTRIBUTE VALUES into city_attributes table
             # TODO: what do happen with emojis?
             values = [(id_city, id_attribute, tab_info[attribute]) for id_attribute, attribute in attributes]
             cursor.executemany(insert_city_attributes_query, values)
+            self._client.commit()
+
+    def _upsert_weather(self, id_city, details):
+        """
+        Given the id and the details of the city, insert all the weather information in the database..
+
+        @param id_city: Id of the current city.
+        @param details: Details of the city to take the info of the weather tab.
+        """
+
+        insert_monthly_weathers_query = "INSERT IGNORE INTO monthly_weathers (id_city, month) VALUES (%s, %s)"
+
+        insert_monthly_weathers_attributes_query = """
+        INSERT INTO monthly_weathers_attributes
+        (id_monthly_weather, id_attribute, value)
+        -- description
+        VALUES (%s, %s, %s) as new
+            ON DUPLICATE KEY UPDATE 
+                value = new.value
+                -- description = new.description
+        """
+
+        tab_name = 'Weather'
+        tab_info = details['Weather']
+
+        attributes = self._upsert_tab_and_attributes(tab_name, tab_info)
+
+        with self._client.cursor() as cursor:
+            # Inserting the months into monthly_weathers
+            cursor.executemany(insert_monthly_weathers_query, [(id_city, i + 1) for i in range(12)])
+            self._client.commit()
+
+            # Selecting the ids of the MONTHLY WEATHERS
+            cursor.execute(f"SELECT id FROM monthly_weathers WHERE id_city = '{id_city}' ORDER BY month ASC;")
+            months = [id_month for (id_month, ) in cursor.fetchall()]
+
+            # Inserting ATTRIBUTE VALUES into monthly_weathers_attributes table
+            values = [(months[i], id_attribute, value)
+                      for id_attribute, attribute in attributes
+                      for i, [__, value] in enumerate(tab_info[attribute])]
+            cursor.executemany(insert_monthly_weathers_attributes_query, values)
+            self._client.commit()
+
+    def _upsert_many(self, table, id_city, columns, values):
+        """
+        Given the table, the id of the city, and the values to insert, upserts the values into the table.
+
+        @param table: Name of the table in the Database.
+        @param id_city: Id of the current city.
+        @param columns: List of the columns to fill with the values list. It's not necessary to add the id_city column.
+        @param values: List of tuples with values to insert into the table.
+        """
+
+        columns = ['id_city'] + columns
+        values_template = ', '.join(['%s'] * len(columns))
+        insert_query = f"INSERT IGNORE INTO {table} ({', '.join(columns)}) VALUES ({values_template})"
+
+        with self._client.cursor() as cursor:
+            cursor.executemany(insert_query, [(id_city, *(tuple_of_values, )) for tuple_of_values in values])
             self._client.commit()
 
     def insert_city_info(self, details):
@@ -137,166 +213,30 @@ class MySQLConnector:
         self._upsert_key_value_tab_info(id_city, 'Digital Nomad Guide', details['DigitalNomadGuide'])
         self._upsert_key_value_tab_info(id_city, 'Cost of Living', details['CostOfLiving'])
 
+        self._upsert_many('photos', id_city, ['src'], details['Photos'])
+
+        pros_and_cons = details['ProsAndCons']
+        pros = [(pro, 'P') for pro in pros_and_cons['pros']]
+        cons = [(con, 'C') for con in pros_and_cons['cons']]
+        # TODO: think how to avoid inserting duplicate rows without using the description as a UNIQUE constraint
+        #self._upsert_many('pros_and_cons', id_city, ['description', 'type'], pros + cons)
+
+        # TODO scrap date
+        # TODO insert only new data (using review date)
+        #self._upsert_many('reviews', id_city, ['description'], details['Reviews'])
+
+        self._upsert_weather(id_city, details)
+
     def _insert_city_info(self, details):
         """Given the city, inserts all the necessary rows in the DB to store the scrapped data."""
 
         # SQL Query statements for inserting scrapped data into the database:
-        insert_photos_query = """
-        INSERT INTO photos
-        (id_city, src)
-        VALUES (%s, %s)        
-        """
-
-        insert_reviews_query = """
-        INSERT INTO reviews
-        (id_city, description)
-        VALUES (%s, %s)        
-        """
 
         insert_cities_relationships_query = """
         INSERT INTO cities_relationships
         (id_city, id_related_city, type)
         VALUES (%s, %s, %s)        
         """
-
-        insert_monthly_weathers_query = """
-        INSERT INTO monthly_weathers
-        (id_city, month)
-        VALUES (%s, %s)        
-        """
-
-        insert_monthly_weathers_attributes_query = """
-        INSERT INTO monthly_weathers_attributes
-        (id_monthly_weather, id_attribute, value)
-        VALUES (%s, %s, %s)        
-        """
-
-
-        insert_pros_and_cons_query = """
-        INSERT IGNORE INTO pros_and_cons
-        (description, type, id_city)
-        VALUES (%s, %s, %s)        
-        """
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-
-        ##### Importing DIGITALNOMADGUIDE info into database #####
-        digitalnomadguide_name = [key for key, value in details.items() if "digitalnomadguide" in key.lower()]
-
-        with self._client.cursor() as cursor:
-            cursor.executemany(insert_tabs_query, [(digitalnomadguide_name[0])])
-            self._client.commit()
-
-        digitalnomadguide_dict = [value for key, value in details.items() if "digitalnomadguide" in key.lower()]
-
-        digitalnomadguide_attributes_name_list = []
-        digitalnomadguide_attributes_value_list = []
-        for attributes, values in digitalnomadguide_dict[0].items():
-            digitalnomadguide_attributes_name_list.append(attributes)
-            digitalnomadguide_attributes_value_list.append(values)
-
-        # Selecting the id of the tab name "Digital Nomad Guide"
-        with self._client.cursor() as cursor:
-            cursor.execute("SELECT id FROM tabs WHERE name = '{0}';".format(digitalnomadguide_name[0]))
-            id_tab_digitalnomadguide = [i[0][0] if i else None for i in cursor.fetchall()]
-
-        # Inserting DIGITALNOMADGUIDE ATTRIBUTE NAMES into attributes table
-        for attribute in digitalnomadguide_attributes_name_list:
-            with self._client.cursor() as cursor:
-                cursor.executemany(insert_attributes_query, [(attribute, id_tab_digitalnomadguide[0])])
-                self._client.commit()
-
-        # Inserting DIGITALNOMADGUIDE ATTRIBUTE VALUES into city_attributes table
-        counter = 0
-        for value in digitalnomadguide_attributes_value_list:
-            self._client.execute("SELECT id FROM attributes WHERE name = '{0}' AND id_tab = '{1}';"
-                                 .format(digitalnomadguide_attributes_name_list[counter],
-                                         id_tab_digitalnomadguide[0]))
-            id_attribute = [i[0][0] if i else None for i in cursor.fetchall()]
-
-            with self._client.cursor() as cursor:
-                cursor.executemany(insert_city_attributes_query, [(id_city[0], id_attribute[0], value)])
-                self._client.commit()
-            counter += 1
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-
-        ##### Importing REVIEWS info into database #####
-        reviews_value_list = [value for key, value in details.items() if "reviews" in key.lower()]
-
-        # Inserting REVIEWS VALUES/DESCRIPTIONS into reviews table
-        for value in reviews_value_list:
-            with self._client.cursor() as cursor:
-                cursor.executemany(insert_reviews_query, [(id_city[0], value)])
-                self._client.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-
-        ##### Importing PHOTOS info into database #####
-        photos_src_list = [value for key, value in details.items() if "photos" in key.lower()]
-
-        # Inserting PHOTOS VALUES/SRC into photos table
-        for src in photos_src_list:
-            with self._client.cursor() as cursor:
-                cursor.executemany(insert_photos_query, [(id_city[0], src)])
-                self._client.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-
-        ##### Importing WEATHER info into database #####
-        weather_name = [key for key, value in details.items() if "weather" in key.lower()]
-
-        with self._client.cursor() as cursor:
-            cursor.executemany(insert_tabs_query, [(weather_name[0])])
-            self._client.commit()
-
-        weather_dict = [value for key, value in details.items() if "weather" in key.lower()]
-
-        weather_attributes_name_list = []
-        weather_attributes_list_of_values_lists = []
-        for attributes, values in weather_dict[0].items():
-            weather_attributes_name_list.append(attributes)
-            weather_attributes_list_of_values_lists.append(values)
-
-        # Selecting the id of the tab name "Weather"
-        with self._client.cursor() as cursor:
-            cursor.execute("SELECT id FROM tabs WHERE name = '{0}';".format(weather_name[0]))
-            id_tab_weather = [i[0][0] if i else None for i in cursor.fetchall()]
-
-        # Inserting WEATHER ATTRIBUTE NAMES (ie: Table Row Titles) into attributes table
-        for attribute in weather_attributes_name_list:
-            with self._client.cursor() as cursor:
-                cursor.executemany(insert_attributes_query, [(attribute, id_tab_weather[0])])
-                self._client.commit()
-
-        # Inserting WEATHER MONTHS (ie: Table Column Titles) into monthly_weathers table
-        for list_of_month_and_value in weather_attributes_list_of_values_lists[0]:
-            month = list_of_month_and_value[0]
-            with self._client.cursor() as cursor:
-                cursor.executemany(insert_monthly_weathers_query, [(id_city[0], month)])
-                self._client.commit()
-
-        # Inserting WEATHER ATTRIBUTE VALUES into monthly_weathers_attributes table
-        counter = 0
-        for list_of_months_and_values in weather_attributes_list_of_values_lists:
-            # Selecting the id of the weather attribute "Feels, Real, Humidity,etc"
-            self._client.execute("SELECT id FROM attributes WHERE name = '{0}' AND id_tab = '{1}';"
-                                 .format(weather_attributes_name_list[counter],
-                                         id_tab_weather[0]))
-            id_attribute = [i[0][0] if i else None for i in cursor.fetchall()]
-
-            for list_of_month_and_value in list_of_months_and_values:
-                month = list_of_month_and_value[0]
-                value = list_of_month_and_value[1]
-
-                # Selecting the id of the weather month "Jan, Feb, March, etc"
-                with self._client.cursor() as cursor:
-                    cursor.execute("SELECT id FROM monthly_weathers WHERE month = '{0}';".format(month))
-                    id_monthly_weather = [i[0][0] if i else None for i in cursor.fetchall()]
-
-                with self._client.cursor() as cursor:
-                    cursor.executemany(insert_monthly_weathers_attributes_query,
-                                       [(id_monthly_weather[0], id_attribute[0], value)])
-                    self._client.commit()
-
-            counter += 1
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
 
         # TODO: I STILL NEED TO DO STORAGE OF CITY RELATIONSHIPS
         ##### Importing NEAR, NEXT and SIMILAR info into database #####
@@ -308,19 +248,3 @@ class MySQLConnector:
 
         similar_name = [key for key, value in details.items() if "similar" in key.lower()]
         similar_values_list = [value for key, value in details.items() if "similar" in key.lower()]
-
-        # Inserting PHOTOS VALUES/SRC into photos table
-        for src in photos_src_list:
-            with self._client.cursor() as cursor:
-                cursor.executemany(insert_photos_query, [(id_city[0], src)])
-                self._client.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-        # TODO: I STILL NEED TO DO STORAGE OF PROS AND CONS
-        ##### Importing PROS AMD CONS info into database #####
-
-# def main():
-#
-#
-#
-# if __name__ == "__main__":
-#     main()
