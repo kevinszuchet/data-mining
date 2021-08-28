@@ -1,3 +1,5 @@
+-- TODO: TRIGGERS FOR AUDIT INFO
+
 CREATE DATABASE IF NOT EXISTS nomad_list;
 
 USE nomad_list;
