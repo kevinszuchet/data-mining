@@ -95,5 +95,6 @@ CREATE TABLE IF NOT EXISTS photos (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   src VARCHAR(255),
   id_city INT,
-  FOREIGN KEY (id_city) REFERENCES cities(id)
+  FOREIGN KEY (id_city) REFERENCES cities(id),
+  UNIQUE (id_city, src)
 );
