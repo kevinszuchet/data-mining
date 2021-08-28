@@ -52,7 +52,8 @@ CREATE TABLE IF NOT EXISTS city_attributes (
   -- description VARCHAR(),
   -- url VARCHAR(),
   FOREIGN KEY (id_city) REFERENCES cities(id),
-  FOREIGN KEY (id_attribute) REFERENCES attributes(id)
+  FOREIGN KEY (id_attribute) REFERENCES attributes(id),
+  UNIQUE (id_city, id_attribute)
 );
 
 CREATE TABLE IF NOT EXISTS pros_and_cons (
