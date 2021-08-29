@@ -337,8 +337,8 @@ class MySQLConnector:
         # TODO: I STILL NEED TO DO STORAGE OF PROS AND CONS
         ##### Importing PROS AMD CONS info into database #####
 
-    def filter_cities_by(self, *args, num=None, country=None, continent=None, rank_from=None, rank_to=None,
-                         sorted_by, order, **kwargs):
+    def filter_cities_by(self, *args, num_of_cities=None, country=None, continent=None, rank_from=None, rank_to=None,
+                         sorted_by, order, verbose=0, **kwargs):
         query = f"""
         SELECT city.*
         FROM cities city
@@ -350,26 +350,18 @@ class MySQLConnector:
             {f'rank >= {rank_from} AND ' if rank_from else ''}
             {f'rank <= {rank_to} AND ' if rank_to else ''}
         ORDER BY {sorted_by} {order}
-        {f'LIMIT {num}' if num else ''}
+        {f'LIMIT {num_of_cities}' if num_of_cities else ''}
         ;"""
 
-        # TODO to avoid many empty lines print("\n".join([re.sub(" +", " ", s) for s in filter(str.strip, query.splitlines())]))
+        query = "\n".join([re.sub(" +", " ", s) for s in filter(str.strip, query.splitlines())])
+
+        if verbose:
+            self._logger.info(f"About to execute the filter query: {query}")
 
         with self._client.cursor() as cursor:
-            result = cursor.execute(query)
+            if verbose:
+                self._logger.info(f"Executing the query...")
 
-        return result
-
-    def sort_cities_by(self, *args, by, order, **kwargs):
-        query = f"""
-        SELECT city.*
-        FROM cities city
-        {'JOIN countries country ON city.id_country = country.id' if by in ['country', 'continent'] else ''}
-        {'JOIN continents continent ON country.id_continent = continent.id' if by == 'continent' else ''}
-        ORDER BY {by} {order}
-        """
-
-        with self._client.cursor() as cursor:
             result = cursor.execute(query)
 
         return result

@@ -60,7 +60,7 @@ class NomadListScrapper:
                 self._logger.info('New Html written to disk')
         return page_source
 
-    def _get_all_the_cities(self, page_source, num=None):
+    def _get_all_the_cities(self, page_source, num_of_cities=None):
         """Scroll to the end of the main page fetching all the cities as li tags."""
         try:
             if page_source is None:
@@ -72,7 +72,7 @@ class NomadListScrapper:
             self._logger.debug(f"Created Beautiful soup object from the HTML file")
             cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
             self._logger.debug(f"Cities achieved")
-            return cities_lis if num is None else cities_lis[:num]
+            return cities_lis if num_of_cities is None else cities_lis[:num_of_cities]
         except(AttributeError, KeyError) as e:
             self._logger.error(f"Error trying to find all the cities in the page source: {e}")
             sys.exit(1)

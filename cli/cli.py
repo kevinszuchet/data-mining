@@ -16,14 +16,17 @@ class CommandLineInterface:
 
         self._parse_args()
 
+    # TODO:
+    #  - versbosity
+
     def _load_parsers(self):
         self._parsers = {
-            'scrap': {
+            'scrape': {
                 'method': CommandLineInterface.scrap_cities,
                 'help_message': 'Scrap specific cities from the Nomad List site.',
                 'params': [
                     {
-                        'name': 'num',
+                        'name': 'num-of-cities',
                         'positional': False,
                         'type': int,
                         'help': 'Number of required cities.'
@@ -34,6 +37,14 @@ class CommandLineInterface:
                         'type': int,
                         'help': 'Number of scrolls to make in the site to fetch the cities cities.'
                     },
+                    {
+                        'name': 'verbose',
+                        'positional': False,
+                        'type': int,
+                        'default': 0,
+                        'action': 'count',
+                        'help': 'Verbosity level.'
+                    }
                 ]
             },
             'filter': {
@@ -41,7 +52,7 @@ class CommandLineInterface:
                 'help_message': 'Fetch stored cities that match the filters.',
                 'params': [
                     {
-                        'name': 'num',
+                        'name': 'num-of-cities',
                         'positional': False,
                         'type': int,
                         'help': 'Number of required cities.'
@@ -86,29 +97,14 @@ class CommandLineInterface:
                         'help': 'Order of sorting.',
                         'choices': ['ASC', 'DESC'],
                         'default': 'ASC'
-                    }
-                ]
-            },
-            'sort': {
-                'method': CommandLineInterface.sort_by,
-                'help_message': 'Sort the cities by some criteria.',
-                'params': [
-                    {
-                        'name': 'by',
-                        'positional': False,
-                        'type': str,
-                        'help': 'Sorting criteria.',
-                        # TODO we could offer combinations (name, rank for example)
-                        'choices': ['rank', 'name', 'country', 'continent', 'cost', 'internet', 'fun', 'safety'],
-                        'default': 'rank'
                     },
                     {
-                        'name': 'order',
+                        'name': 'verbose',
                         'positional': False,
-                        'type': str,
-                        'help': 'Order of sorting.',
-                        'choices': ['ASC', 'DESC'],
-                        'default': 'ASC'
+                        'type': int,
+                        'default': 0,
+                        'action': 'count',
+                        'help': 'Verbosity level.'
                     }
                 ]
             }
@@ -121,6 +117,7 @@ class CommandLineInterface:
                 argument_name = subcommand['name'] if subcommand['positional'] else f"--{subcommand['name']}"
                 nested_parser.add_argument(argument_name, type=subcommand['type'], choices=subcommand.get('choices'),
                                            default=subcommand.get('default'),
+                                           action=subcommand.get('action'),
                                            help=subcommand['help'])
 
     def _parse_args(self):
@@ -132,24 +129,18 @@ class CommandLineInterface:
             self._parser.print_help()
             sys.exit(0)
 
-        result = self._parsers[command]['method'](**inputs)
-        print(result)
-
-    # TODO: join filter and sort
-    @staticmethod
-    def filter_by(*args, **kwargs):
-        # TODO use the tabular printing (check Google Collab)
-        return MySQLConnector().filter_cities_by(*args, **kwargs)
-
-    @staticmethod
-    def sort_by(*args, **kwargs):
-        # TODO use the tabular printing (check Google Collab)
-        return MySQLConnector().sort_cities_by(*args, **kwargs)
+        self._parsers[command]['method'](**inputs)
 
     @staticmethod
     def scrap_cities(*args, **kwargs):
         NomadListScrapper()
         return MySQLConnector().sort_cities_by(*args, **kwargs)
+
+    @staticmethod
+    def filter_by(*args, **kwargs):
+        # TODO use the tabular printing (check Google Collab)
+        results = MySQLConnector().filter_cities_by(*args, **kwargs)
+        print(results)
 
 
 if __name__ == "__main__":
