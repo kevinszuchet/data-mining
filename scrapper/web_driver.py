@@ -1,3 +1,4 @@
+from bs4 import BeautifulSoup
 from selenium import webdriver
 import conf as CFG
 import time
@@ -23,7 +24,7 @@ class WebDriver:
         self._logger.info('Closing Driver')
         self._driver.quit()
 
-    def get_page_source(self, scrolls=None, **kwargs):
+    def get_page_source(self, num_of_cities=None, scrolls=None, **kwargs):
         """Scroll to the end of the main page and returns all the source code."""
         self._logger.info('Initializing Scrolling')
         self._driver.get(self._base_url)
@@ -33,7 +34,13 @@ class WebDriver:
 
         num_of_scrolls = 1
 
-        while scrolls and scrolls <= num_of_scrolls:
+        while scrolls is None or scrolls <= num_of_scrolls:
+            soup = BeautifulSoup(self._driver.page_source, "html.parser")
+            cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
+
+            if num_of_cities and len(cities_lis) >= num_of_cities:
+                break
+
             # Scroll down to bottom
             self._driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             self._logger.info(f"Scroll height: {last_height}")

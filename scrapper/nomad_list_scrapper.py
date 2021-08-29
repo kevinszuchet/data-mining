@@ -18,7 +18,7 @@ class NomadListScrapper:
             logger = Logger().logger
 
         if web_driver is None:
-            WebDriver(logger, CFG.NOMAD_LIST_URL)
+            web_driver = WebDriver(logger, CFG.NOMAD_LIST_URL)
 
         self._base_url = CFG.NOMAD_LIST_URL
         self._driver = web_driver
@@ -50,7 +50,8 @@ class NomadListScrapper:
     def _get_html(self, **kwargs):
         """Gets the Main HTML file which contents will be scrapped"""
         self._logger.info('Retrieving base Html file')
-        should_fetch_and_dump_from_disk = os.path.exists(CFG.PAGE_SOURCE) and os.getenv('ENV') != "production" and CFG.LOAD_HTML_FROM_DISK
+        should_fetch_and_dump_from_disk = os.path.exists(CFG.PAGE_SOURCE) and os.getenv(
+            'ENV') != "production" and CFG.LOAD_HTML_FROM_DISK
         if should_fetch_and_dump_from_disk:
             page_source = self._load_html_from_disk()
         else:
@@ -58,9 +59,11 @@ class NomadListScrapper:
             if should_fetch_and_dump_from_disk:
                 self._write_html_to_disk(page_source)
                 self._logger.info('New Html written to disk')
+
+        self._driver.close()
         return page_source
 
-    def _get_all_the_cities(self, page_source, num_of_cities=None):
+    def _get_all_the_cities(self, page_source, num_of_cities=None, **kwargs):
         """Scroll to the end of the main page fetching all the cities as li tags."""
         try:
             if page_source is None:
@@ -121,6 +124,5 @@ class NomadListScrapper:
             except Exception as e:
                 # TODO: remove exc_info
                 self._logger.error(f"Exception raised trying to get the city details: {e}", exc_info=True)
-        self._driver.close()
         self._logger.info('Scrapping finished')
         return

@@ -4,8 +4,8 @@ from tabulate import tabulate
 from db.mysql_connector import MySQLConnector
 from scrapper.nomad_list_scrapper import NomadListScrapper
 
-
 # TODO handle abbreviations
+# TODO verbose implies a higher level of logs
 
 class CommandLineInterface:
     def __init__(self):
@@ -134,8 +134,7 @@ class CommandLineInterface:
 
     @staticmethod
     def scrap_cities(*args, **kwargs):
-        NomadListScrapper()
-        return MySQLConnector().sort_cities_by(*args, **kwargs)
+        NomadListScrapper().scrap_cities(*args, **kwargs)
 
     @staticmethod
     def filter_by(*args, **kwargs):
