@@ -270,10 +270,10 @@ class MySQLConnector:
         """Given the filter criteria, build a query to fetch the required cities from the database."""
 
         query = f"""
-            SELECT city.*
+            SELECT city.city_rank, city.name, country.name, continent.name  
             FROM cities city
-            {'JOIN countries country ON city.id_country = country.id' if country or continent else ''}
-            {'JOIN continents continent ON country.id_continent = continent.id' if country or continent else ''}
+            JOIN countries country ON city.id_country = country.id
+            JOIN continents continent ON country.id_continent = continent.id
             {'WHERE' if country or continent or rank_from or rank_to else ''}
                 {f'country.name = {country} AND ' if country else ''}
                 {f'continent.name = {continent} AND ' if continent else ''}
@@ -290,8 +290,12 @@ class MySQLConnector:
 
         with self._client.cursor() as cursor:
             if verbose:
-                self._logger.info(f"Executing the query...")
+                self._logger.info("Executing the query...")
 
-            result = cursor.execute(query)
+            cursor.execute(query)
+            result = cursor.fetchall()
+
+            if verbose:
+                self._logger.info(f"Execution results: {result}")
 
         return result

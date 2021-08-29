@@ -1,10 +1,11 @@
+import sys
 import argparse
+from tabulate import tabulate
 from db.mysql_connector import MySQLConnector
 from scrapper.nomad_list_scrapper import NomadListScrapper
 
-# TODO handle abbreviations
-import sys
 
+# TODO handle abbreviations
 
 class CommandLineInterface:
     def __init__(self):
@@ -40,9 +41,8 @@ class CommandLineInterface:
                     {
                         'name': 'verbose',
                         'positional': False,
-                        'type': int,
-                        'default': 0,
-                        'action': 'count',
+                        'default': False,
+                        'action': 'store_true',
                         'help': 'Verbosity level.'
                     }
                 ]
@@ -87,8 +87,8 @@ class CommandLineInterface:
                         'type': str,
                         'help': 'Sorting criteria.',
                         # TODO we could offer combinations (name, rank for example)
-                        'choices': ['rank', 'name', 'country', 'continent', 'cost', 'internet', 'fun', 'safety'],
-                        'default': 'rank'
+                        'choices': ['city_rank', 'name', 'country', 'continent', 'cost', 'internet', 'fun', 'safety'],
+                        'default': 'city_rank'
                     },
                     {
                         'name': 'order',
@@ -101,9 +101,8 @@ class CommandLineInterface:
                     {
                         'name': 'verbose',
                         'positional': False,
-                        'type': int,
-                        'default': 0,
-                        'action': 'count',
+                        'default': False,
+                        'action': 'store_true',
                         'help': 'Verbosity level.'
                     }
                 ]
@@ -115,10 +114,14 @@ class CommandLineInterface:
             nested_parser = self._sub_parser.add_parser(command, help=parser['help_message'])
             for subcommand in parser['params']:
                 argument_name = subcommand['name'] if subcommand['positional'] else f"--{subcommand['name']}"
-                nested_parser.add_argument(argument_name, type=subcommand['type'], choices=subcommand.get('choices'),
-                                           default=subcommand.get('default'),
-                                           action=subcommand.get('action'),
-                                           help=subcommand['help'])
+                if subcommand.get('action'):
+                    nested_parser.add_argument(argument_name, action=subcommand.get('action'), help=subcommand['help'])
+                else:
+                    nested_parser.add_argument(argument_name, type=subcommand['type'],
+                                               choices=subcommand.get('choices'),
+                                               default=subcommand.get('default'),
+                                               nargs=subcommand.get('nargs'),
+                                               help=subcommand['help'])
 
     def _parse_args(self):
         inputs = vars(self._parser.parse_args())
@@ -138,9 +141,8 @@ class CommandLineInterface:
 
     @staticmethod
     def filter_by(*args, **kwargs):
-        # TODO use the tabular printing (check Google Collab)
         results = MySQLConnector().filter_cities_by(*args, **kwargs)
-        print(results)
+        print(tabulate(results, headers=['Rank', 'City', 'Country', 'Continent']), end='\n\n')
 
 
 if __name__ == "__main__":
