@@ -17,10 +17,8 @@ class CommandLineInterface:
 
         self._parse_args()
 
-    # TODO:
-    #  - versbosity
-
     def _load_parsers(self):
+        # TODO: list of Parser instances
         self._parsers = {
             'scrape': {
                 'method': CommandLineInterface.scrap_cities,
