@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS monthly_weathers_attributes (
 CREATE TABLE IF NOT EXISTS reviews (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   description TEXT,
-  review_date DATE,
+  published_date DATE,
   id_city INT,
   created_on DATETIME NOT NULL DEFAULT NOW(),
   updated_on DATETIME DEFAULT NULL ON UPDATE NOW(),
