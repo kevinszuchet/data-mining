@@ -1,4 +1,5 @@
 import pymysql
+from functools import reduce
 from conf import MYSQL
 from logger import Logger
 import re
@@ -8,10 +9,9 @@ class MySQLConnector:
     """Class that knows how to handle the connection with MySQL."""
 
     def __init__(self, logger=Logger().logger):
+        # TODO: singleton to save the ids of the tabs in a Class dict
         self._logger = logger
         self._client = self._connection()
-
-    # Context manager adapter?
 
     @staticmethod
     def _connection():
@@ -24,334 +24,264 @@ class MySQLConnector:
         """Creates the MySQL Nomadlist Schema in which to store all the scrapped data."""
         # CLI: mysql -u root -p < create_schemas.sql
         try:
-            nomadlist_database = self._client
-
             with open('create_schemas.sql, 'r'') as sql_code_file:
-                with nomadlist_database.cursor() as cursor:
+                with self._client.cursor() as cursor:
                     cursor.execute(sql_code_file.read(), multi=True)
-                    nomadlist_database.commit()
+                    self._client.commit()
         except Error as e:
             print(e)
 
-    def insert_city_info(self, details):
-        """Given the city, inserts all the necessary rows in the DB to store the scrapped data."""
-        nomadlist_database = self._client
+    def _upsert_and_get_id(self, table, values_dict, domain_identifier=None):
+        """
+            Upsert a row in a table, and returns the id of it.
+            @param table: Name of the SQL table.
+            @param values_dict: Dictionary with column names as keys, and values as values of the dictionary.
+            @param domain_identifier: The way to identify a row of the table in the domain (str|list|tuple).
 
-        # SQL Query statements for inserting scrapped data into the database:
-        insert_cities_query = """
-        INSERT IGNORE INTO cities
-        (name, rank, id_country)
-        VALUES (%s, %s, %s)        
+            @return: Id of the upserted row.
+
+            Given the table name, the values to upsert, and the optional domain_identifier,
+            tries to update the row in the table, unless it doesn't exist. If that happens, then inserts the row,
+            and returns its id.
         """
 
-        insert_countries_query = """
-        INSERT IGNORE INTO countries
-        (name,id_continent)
-        VALUES (%s, %s)     
+        columns = ', '.join(values_dict.keys())
+
+        filters = [f"{key} = '{value}'" for key, value in values_dict.items() if
+                   domain_identifier is None or key == domain_identifier or key in domain_identifier]
+        where_clause = ' AND'.join(filters)
+        select_query = f"SELECT id, {columns} FROM {table} WHERE {where_clause};"
+
+        values_tuple = tuple(values_dict.values())
+
+        insert_query = f"""
+        INSERT IGNORE INTO {table}
+        ({columns})
+        VALUES ({', '.join(['%s'] * len(values_dict))})
         """
 
-        insert_continents_query = """
-        INSERT IGNORE INTO continents
-        (name)
-        VALUES (%s)        
+        update_query = f"""
+        UPDATE TABLE {table}
+        SET ({', '.join([f"{key} = '{value}'" for key, value in values_dict.items()])})
+        """
+
+        with self._client.cursor() as cursor:
+            cursor.execute(select_query)
+            result = cursor.fetchone()
+
+            if result:
+                row_id, *other_values = result
+                differences = [other_value != values_tuple[i] for i, other_value in enumerate(other_values)]
+
+                if any(differences):
+                    cursor.execute(update_query)
+                    self._client.commit()
+
+                return row_id
+
+            cursor.execute(insert_query, values_tuple)
+            self._client.commit()
+            row_id = cursor.lastrowid
+
+        return row_id
+
+    def _upsert_tab_and_attributes(self, tab_name, tab_info):
+        """
+        Given the name of the tab, and its information, takes all the attributes,
+        then creates the rows for the tab table and the attributes one.
+        Returns all the ids of those upserted attributes.
+
+        @param tab_name: Name of the tab.
+        @param tab_info: Tab information.
+        """
+
+        insert_tabs_query = "INSERT IGNORE INTO tabs (name) VALUES (%s)"
+        insert_attributes_query = "INSERT IGNORE INTO attributes (name, id_tab) VALUES (%s, %s)"
+
+        with self._client.cursor() as cursor:
+            # TODO: insert only once all the tabs names.
+            cursor.execute(insert_tabs_query, tab_name)
+            self._client.commit()
+
+            # Selecting the id of the tab name {tab_name}
+            cursor.execute(f"SELECT id FROM tabs WHERE name = '{tab_name}';")
+            id_tab, = cursor.fetchone()
+
+            # Inserting ATTRIBUTE NAMES into attributes table
+            cursor.executemany(insert_attributes_query, [(attribute, id_tab) for attribute in tab_info.keys()])
+            self._client.commit()
+
+            # Selecting the ids of the ATTRIBUTE NAMES
+            cursor.execute(f"SELECT id, name FROM attributes WHERE id_tab = '{id_tab}';")
+            attributes = cursor.fetchall()
+        return attributes
+
+    def _upsert_key_value_tab_info(self, id_city, tab_name, tab_info):
+        """
+        Given the name of the table, and the values to insert, tries to insert or update the rows into the tab's table.
+
+        @param id_city: Id of the current city.
+        @param tab_name: Name of the tab.
+        @param tab_info: Tab information.
         """
 
         insert_city_attributes_query = """
-        INSERT INTO city_attributes_
-        (id_city, id_attribute, value)
-        VALUES (%s, %s, %s)        
+        INSERT INTO city_attributes
+        (id_city, id_attribute, description)
+        -- value, url 
+        VALUES (%s, %s, %s) as new
+            ON DUPLICATE KEY UPDATE 
+                description = new.description 
+                -- value = new.value, url = new.url
         """
 
-        insert_photos_query = """
-        INSERT INTO photos
-        (id_city, src)
-        VALUES (%s, %s)        
-        """
+        attributes = self._upsert_tab_and_attributes(tab_name, tab_info)
 
-        insert_reviews_query = """
-        INSERT INTO reviews
-        (id_city, description)
-        VALUES (%s, %s)        
-        """
+        with self._client.cursor() as cursor:
+            # Inserting {tab_name} ATTRIBUTE VALUES into city_attributes table
+            # TODO: what do happen with emojis?
+            values = [(id_city, id_attribute, tab_info[attribute]) for id_attribute, attribute in attributes]
+            cursor.executemany(insert_city_attributes_query, values)
+            self._client.commit()
 
-        insert_cities_relationships_query = """
-        INSERT INTO cities_relationships
-        (id_city, id_related_city, type)
-        VALUES (%s, %s, %s)        
+    def _upsert_weather(self, id_city, details):
         """
+        Given the id and the details of the city, insert all the weather information in the database..
 
-        insert_monthly_weathers_query = """
-        INSERT INTO monthly_weathers
-        (id_city, month)
-        VALUES (%s, %s)        
+        @param id_city: Id of the current city.
+        @param details: Details of the city to take the info of the weather tab.
         """
 
         insert_monthly_weathers_attributes_query = """
         INSERT INTO monthly_weathers_attributes
-        (id_monthly_weather, id_attribute, value)
-        VALUES (%s, %s, %s)        
+        (id_city, id_attribute, month, value)
+        -- description
+        VALUES (%s, %s, %s, %s) as new
+            ON DUPLICATE KEY UPDATE 
+                value = new.value
+                -- description = new.description
         """
 
-        insert_attributes_query = """
-        INSERT IGNORE INTO attributes
-        (name, id_tab)
-        VALUES (%s, %s)        
+        tab_name = 'Weather'
+        tab_info = details['Weather']
+
+        attributes = self._upsert_tab_and_attributes(tab_name, tab_info)
+
+        with self._client.cursor() as cursor:
+            # Inserting ATTRIBUTE VALUES into monthly_weathers_attributes table
+            values = [(id_city, id_attribute, i + 1, value)
+                      for id_attribute, attribute in attributes
+                      for i, [__, value] in enumerate(tab_info[attribute])]
+            cursor.executemany(insert_monthly_weathers_attributes_query, values)
+            self._client.commit()
+
+    def _upsert_many(self, table, id_city, columns, values):
+        """
+        Given the table, the id of the city, and the values to insert, upserts the values into the table.
+
+        @param table: Name of the table in the Database.
+        @param id_city: Id of the current city.
+        @param columns: List of the columns to fill with the values list. It's not necessary to add the id_city column.
+        @param values: List of tuples with values to insert into the table.
         """
 
-        insert_pros_and_cons_query = """
-        INSERT IGNORE INTO pros_and_cons
-        (description, type, id_city)
-        VALUES (%s, %s, %s)        
+        columns = ['id_city'] + columns
+        values_template = ', '.join(['%s'] * len(columns))
+        insert_query = f"INSERT IGNORE INTO {table} ({', '.join(columns)}) VALUES ({values_template})"
+
+        values
+
+        with self._client.cursor() as cursor:
+            values = [(id_city,) + (tuple_of_values if isinstance(tuple_of_values, tuple) else (tuple_of_values,))
+                      for tuple_of_values in values]
+            cursor.executemany(insert_query, values)
+            self._client.commit()
+
+    def _insert_relationships(self, id_city, details):
         """
-        insert_tabs_query = """
-        INSERT IGNORE INTO tabs
-        (name)
-        VALUES (%s)        
+        Given the id of the current city and the details of it, insert the relationships between this city and the near,
+        next, or similar to it.
+
+        @param id_city: Id of the current city.
+        @param details: Dictionary with all the information about the current city.
         """
 
-        ##### Importing CONTINENT info into database #####
+        types = ['Near', 'Next', 'Similar']
+        cities = set(reduce(lambda cities_names, key: cities_names + details[key], types, []))
 
-        # TODO: details['continent']
-        continent = [value for key, value in details["DigitalNomadGuide"].items() if "continent" in key.lower()]
+        insert_cities_query = "INSERT IGNORE INTO cities (name) VALUES (%s)"
+        selectable_cities = ','.join([f"'{city}'" for city in cities])
+        select_cities_query = f"SELECT id, name FROM cities WHERE name IN ({selectable_cities})"
 
-        # Inserting CONTINENT NAMES into continents table
-        with nomadlist_database.cursor() as cursor:
-            cursor.executemany(insert_continents_query, [(continent[0])])
-            nomadlist_database.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
+        insert_cities_relationships_query = """
+        INSERT IGNORE INTO cities_relationships
+        (id_city, id_related_city, type)
+        VALUES (%s, %s, %s)
+        """
 
-        ##### Importing COUNTRY info into database #####
-        # TODO: details['country']
-        country = [value for key, value in details.items() if "country" in key.lower()]
+        with self._client.cursor() as cursor:
+            cursor.executemany(insert_cities_query, cities)
+            self._client.commit()
 
-        # Selecting the id of the continent in which the city resides
-        with nomadlist_database.cursor() as cursor:
-            cursor.execute("SELECT id FROM continents WHERE name = '{0}';".format(continent[0]))
-            # TODO: id_continent, = cursor.fetchone()
-            id_continent = [i[0][0] if i else None for i in cursor.fetchall()]
+            cursor.execute(select_cities_query)
+            relationships = []
+            for id_related, name in cursor.fetchall():
+                for i, type_name in enumerate(types):
+                    if name in details[type_name]:
+                        relationships.append((id_city, id_related, i))
 
-        # Inserting COUNTRY NAMES into countries table
-        with nomadlist_database.cursor() as cursor:
-            cursor.executemany(insert_countries_query, [(country[0], id_continent[0])])
-            nomadlist_database.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
+            cursor.executemany(insert_cities_relationships_query, relationships)
+            self._client.commit()
 
-        ##### Importing CITY and RANK info into database #####
-        # TODO: details['city']
-        city = [value for key, value in details.items() if "city" in key.lower()]
-        # TODO: details['rank']
-        rank = [value for key, value in details.items() if "rank" in key.lower()]
+    def insert_city_info(self, details):
+        """Given the details of the city, insert all the necessary rows to store it in the database."""
+        
+        id_continent = self._upsert_and_get_id("continents", {'name': details['continent']},
+                                               domain_identifier='name')
 
-        # Selecting the id of the country in which the city resides
-        with nomadlist_database.cursor() as cursor:
-            cursor.execute("SELECT id FROM countries WHERE name = '{0}';".format(country[0]))
-            id_country = [i[0][0] if i else None for i in cursor.fetchall()]
+        country = {'name': details['country'], 'id_continent': id_continent}
+        id_country = self._upsert_and_get_id("countries", country, domain_identifier='name')
 
-        # Inserting CITY NAMES and their RANKS into cities table
-        with nomadlist_database.cursor() as cursor:
-            cursor.executemany(insert_cities_query, [(city[0], rank[0], id_country[0])])
-            nomadlist_database.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
+        city = {'name': details['city'], 'city_rank': details['rank'], 'id_country': id_country}
+        id_city = self._upsert_and_get_id("cities", city, domain_identifier='name')
 
-        ##### Importing SCORES info into database #####
-        # TODO: details['scores'] (same for all different tabs scrappers keys)
-        scores_name = [key for key, value in details.items() if "scores" in key.lower()]
+        self._upsert_key_value_tab_info(id_city, 'Scores', details['Scores'])
+        self._upsert_key_value_tab_info(id_city, 'Digital Nomad Guide', details['DigitalNomadGuide'])
+        self._upsert_key_value_tab_info(id_city, 'Cost of Living', details['CostOfLiving'])
 
-        with nomadlist_database.cursor() as cursor:
-            cursor.executemany(insert_tabs_query, [(scores_name[0])])
-            nomadlist_database.commit()
+        self._upsert_many('photos', id_city, ['src'], details['Photos'])
 
-        scores_dict = [value for key, value in details.items() if "scores" in key.lower()]
+        pros_and_cons = details['ProsAndCons']
+        pros = [(pro, 'P') for pro in pros_and_cons['pros']]
+        cons = [(con, 'C') for con in pros_and_cons['cons']]
+        # TODO: think how to avoid inserting duplicate rows without using the description as a UNIQUE constraint
+        self._upsert_many('pros_and_cons', id_city, ['description', 'type'], pros + cons)
 
-        scores_attributes_name_list = []
-        scores_attributes_value_list = []
-        for attributes, values in scores_dict[0].items():
-            scores_attributes_name_list.append(attributes)
-            scores_attributes_value_list.append(values)
+        # TODO scrap date
+        # TODO insert only new data (using review date)
+        self._upsert_many('reviews', id_city, ['description'], details['Reviews'])
 
-        # Selecting the id of the tab name "Scores"
-        with nomadlist_database.cursor() as cursor:
-            cursor.execute("SELECT id FROM tabs WHERE name = '{0}';".format(scores_name[0]))
-            id_tab_scores = [i[0][0] if i else None for i in cursor.fetchall()]
+        self._upsert_weather(id_city, details)
 
-        # Inserting SCORES ATTRIBUTE NAMES into attributes table
-        for attribute in scores_attributes_name_list:
-            with nomadlist_database.cursor() as cursor:
-                cursor.executemany(insert_attributes_query, [(attribute, id_tab_scores[0])])
-                nomadlist_database.commit()
-
-        # Selecting the id of the city we are currently saving data for
-        with nomadlist_database.cursor() as cursor:
-            cursor.execute("SELECT id FROM cities WHERE name = '{0}';".format(city[0]))
-            id_city = [i[0][0] if i else None for i in cursor.fetchall()]
-
-        # Inserting SCORES ATTRIBUTE VALUES into city_attributes table
-        counter = 0
-        for value in scores_attributes_value_list:
-            nomadlist_database.execute("SELECT id FROM attributes WHERE name = '{0}' AND id_tab = '{1}';"
-                                       .format(scores_attributes_name_list[counter], id_tab_scores[0]))
-            id_attribute = [i[0][0] if i else None for i in cursor.fetchall()]
-
-            with nomadlist_database.cursor() as cursor:
-                cursor.executemany(insert_city_attributes_query, [(id_city[0], id_attribute[0], value)])
-                nomadlist_database.commit()
-            counter += 1
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-
-        ##### Importing DIGITALNOMADGUIDE info into database #####
-        digitalnomadguide_name = [key for key, value in details.items() if "digitalnomadguide" in key.lower()]
-
-        with nomadlist_database.cursor() as cursor:
-            cursor.executemany(insert_tabs_query, [(digitalnomadguide_name[0])])
-            nomadlist_database.commit()
-
-        digitalnomadguide_dict = [value for key, value in details.items() if "digitalnomadguide" in key.lower()]
-
-        digitalnomadguide_attributes_name_list = []
-        digitalnomadguide_attributes_value_list = []
-        for attributes, values in digitalnomadguide_dict[0].items():
-            digitalnomadguide_attributes_name_list.append(attributes)
-            digitalnomadguide_attributes_value_list.append(values)
-
-        # Selecting the id of the tab name "Digital Nomad Guide"
-        with nomadlist_database.cursor() as cursor:
-            cursor.execute("SELECT id FROM tabs WHERE name = '{0}';".format(digitalnomadguide_name[0]))
-            id_tab_digitalnomadguide = [i[0][0] if i else None for i in cursor.fetchall()]
-
-        # Inserting DIGITALNOMADGUIDE ATTRIBUTE NAMES into attributes table
-        for attribute in digitalnomadguide_attributes_name_list:
-            with nomadlist_database.cursor() as cursor:
-                cursor.executemany(insert_attributes_query, [(attribute, id_tab_digitalnomadguide[0])])
-                nomadlist_database.commit()
-
-        # Inserting DIGITALNOMADGUIDE ATTRIBUTE VALUES into city_attributes table
-        counter = 0
-        for value in digitalnomadguide_attributes_value_list:
-            nomadlist_database.execute("SELECT id FROM attributes WHERE name = '{0}' AND id_tab = '{1}';"
-                                       .format(digitalnomadguide_attributes_name_list[counter],
-                                               id_tab_digitalnomadguide[0]))
-            id_attribute = [i[0][0] if i else None for i in cursor.fetchall()]
-
-            with nomadlist_database.cursor() as cursor:
-                cursor.executemany(insert_city_attributes_query, [(id_city[0], id_attribute[0], value)])
-                nomadlist_database.commit()
-            counter += 1
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-
-        ##### Importing REVIEWS info into database #####
-        reviews_value_list = [value for key, value in details.items() if "reviews" in key.lower()]
-
-        # Inserting REVIEWS VALUES/DESCRIPTIONS into reviews table
-        for value in reviews_value_list:
-            with nomadlist_database.cursor() as cursor:
-                cursor.executemany(insert_reviews_query, [(id_city[0], value)])
-                nomadlist_database.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-
-        ##### Importing PHOTOS info into database #####
-        photos_src_list = [value for key, value in details.items() if "photos" in key.lower()]
-
-        # Inserting PHOTOS VALUES/SRC into photos table
-        for src in photos_src_list:
-            with nomadlist_database.cursor() as cursor:
-                cursor.executemany(insert_photos_query, [(id_city[0], src)])
-                nomadlist_database.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-
-        ##### Importing WEATHER info into database #####
-        weather_name = [key for key, value in details.items() if "weather" in key.lower()]
-
-        with nomadlist_database.cursor() as cursor:
-            cursor.executemany(insert_tabs_query, [(weather_name[0])])
-            nomadlist_database.commit()
-
-        weather_dict = [value for key, value in details.items() if "weather" in key.lower()]
-
-        weather_attributes_name_list = []
-        weather_attributes_list_of_values_lists = []
-        for attributes, values in weather_dict[0].items():
-            weather_attributes_name_list.append(attributes)
-            weather_attributes_list_of_values_lists.append(values)
-
-        # Selecting the id of the tab name "Weather"
-        with nomadlist_database.cursor() as cursor:
-            cursor.execute("SELECT id FROM tabs WHERE name = '{0}';".format(weather_name[0]))
-            id_tab_weather = [i[0][0] if i else None for i in cursor.fetchall()]
-
-        # Inserting WEATHER ATTRIBUTE NAMES (ie: Table Row Titles) into attributes table
-        for attribute in weather_attributes_name_list:
-            with nomadlist_database.cursor() as cursor:
-                cursor.executemany(insert_attributes_query, [(attribute, id_tab_weather[0])])
-                nomadlist_database.commit()
-
-        # Inserting WEATHER MONTHS (ie: Table Column Titles) into monthly_weathers table
-        for list_of_month_and_value in weather_attributes_list_of_values_lists[0]:
-            month = list_of_month_and_value[0]
-            with nomadlist_database.cursor() as cursor:
-                cursor.executemany(insert_monthly_weathers_query, [(id_city[0], month)])
-                nomadlist_database.commit()
-
-        # Inserting WEATHER ATTRIBUTE VALUES into monthly_weathers_attributes table
-        counter = 0
-        for list_of_months_and_values in weather_attributes_list_of_values_lists:
-            # Selecting the id of the weather attribute "Feels, Real, Humidity,etc"
-            nomadlist_database.execute("SELECT id FROM attributes WHERE name = '{0}' AND id_tab = '{1}';"
-                                       .format(weather_attributes_name_list[counter],
-                                               id_tab_weather[0]))
-            id_attribute = [i[0][0] if i else None for i in cursor.fetchall()]
-
-            for list_of_month_and_value in list_of_months_and_values:
-                month = list_of_month_and_value[0]
-                value = list_of_month_and_value[1]
-
-                # Selecting the id of the weather month "Jan, Feb, March, etc"
-                with nomadlist_database.cursor() as cursor:
-                    cursor.execute("SELECT id FROM monthly_weathers WHERE month = '{0}';".format(month))
-                    id_monthly_weather = [i[0][0] if i else None for i in cursor.fetchall()]
-
-                with nomadlist_database.cursor() as cursor:
-                    cursor.executemany(insert_monthly_weathers_attributes_query,
-                                       [(id_monthly_weather[0], id_attribute[0], value)])
-                    nomadlist_database.commit()
-
-            counter += 1
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-
-        # TODO: I STILL NEED TO DO STORAGE OF CITY RELATIONSHIPS
-        ##### Importing NEAR, NEXT and SIMILAR info into database #####
-        near_name = [key for key, value in details.items() if "near" in key.lower()]
-        near_values_list = [value for key, value in details.items() if "near" in key.lower()]
-
-        next_name = [key for key, value in details.items() if "next" in key.lower()]
-        next_values_list = [value for key, value in details.items() if "next" in key.lower()]
-
-        similar_name = [key for key, value in details.items() if "similar" in key.lower()]
-        similar_values_list = [value for key, value in details.items() if "similar" in key.lower()]
-
-        # Inserting PHOTOS VALUES/SRC into photos table
-        for src in photos_src_list:
-            with nomadlist_database.cursor() as cursor:
-                cursor.executemany(insert_photos_query, [(id_city[0], src)])
-                nomadlist_database.commit()
-        #       #       #       #       #       #       #       #       #       #       #       #       #       #
-        # TODO: I STILL NEED TO DO STORAGE OF PROS AND CONS
-        ##### Importing PROS AMD CONS info into database #####
+        self._insert_relationships(id_city, details)
 
     def filter_cities_by(self, *args, num_of_cities=None, country=None, continent=None, rank_from=None, rank_to=None,
                          sorted_by, order, verbose=0, **kwargs):
+        """Given the filter criteria, build a query to fetch the required cities from the database."""
+
         query = f"""
-        SELECT city.*
-        FROM cities city
-        {'JOIN countries country ON city.id_country = country.id' if country or continent else ''}
-        {'JOIN continents continent ON country.id_continent = continent.id' if country or continent else ''}
-        {'WHERE' if country or continent or rank_from or rank_to else ''}
-            {f'country.name = {country} AND ' if country else ''}
-            {f'continent.name = {continent} AND ' if continent else ''}
-            {f'rank >= {rank_from} AND ' if rank_from else ''}
-            {f'rank <= {rank_to} AND ' if rank_to else ''}
-        ORDER BY {sorted_by} {order}
-        {f'LIMIT {num_of_cities}' if num_of_cities else ''}
-        ;"""
+            SELECT city.*
+            FROM cities city
+            {'JOIN countries country ON city.id_country = country.id' if country or continent else ''}
+            {'JOIN continents continent ON country.id_continent = continent.id' if country or continent else ''}
+            {'WHERE' if country or continent or rank_from or rank_to else ''}
+                {f'country.name = {country} AND ' if country else ''}
+                {f'continent.name = {continent} AND ' if continent else ''}
+                {f'rank >= {rank_from} AND ' if rank_from else ''}
+                {f'rank <= {rank_to} AND ' if rank_to else ''}
+            ORDER BY {sorted_by} {order}
+            {f'LIMIT {num_of_cities}' if num_of_cities else ''}
+            ;"""
 
         query = "\n".join([re.sub(" +", " ", s) for s in filter(str.strip, query.splitlines())])
 
