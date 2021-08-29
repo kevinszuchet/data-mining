@@ -112,7 +112,7 @@ class MySQLConnector:
             self._client.commit()
 
             # Selecting the ids of the ATTRIBUTE NAMES
-            cursor.execute(f"SELECT id, name FROM attributes WHERE id_tab = '{id_tab}';")
+            cursor.execute(f"SELECT id, TRIM(name) FROM attributes WHERE id_tab = {id_tab};")
             attributes = cursor.fetchall()
         return attributes
 
@@ -139,8 +139,8 @@ class MySQLConnector:
 
         with self._client.cursor() as cursor:
             # Inserting {tab_name} ATTRIBUTE VALUES into city_attributes table
-            # TODO: what do happen with emojis?
-            values = [(id_city, id_attribute, tab_info[attribute]) for id_attribute, attribute in attributes]
+            values = [(id_city, id_attribute, tab_info.get(attribute))
+                      for id_attribute, attribute in attributes if tab_info.get(attribute)]
             cursor.executemany(insert_city_attributes_query, values)
             self._client.commit()
 
@@ -171,7 +171,7 @@ class MySQLConnector:
             # Inserting ATTRIBUTE VALUES into monthly_weathers_attributes table
             values = [(id_city, id_attribute, i + 1, value)
                       for id_attribute, attribute in attributes
-                      for i, [__, value] in enumerate(tab_info[attribute])]
+                      for i, [__, value] in enumerate(tab_info.get(attribute, []))]
             cursor.executemany(insert_monthly_weathers_attributes_query, values)
             self._client.commit()
 
@@ -235,7 +235,7 @@ class MySQLConnector:
 
     def insert_city_info(self, details):
         """Given the details of the city, insert all the necessary rows to store it in the database."""
-        
+
         id_continent = self._upsert_and_get_id("continents", {'name': details['continent']},
                                                domain_identifier='name')
 
