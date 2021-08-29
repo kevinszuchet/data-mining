@@ -80,27 +80,18 @@ CREATE TABLE IF NOT EXISTS pros_and_cons (
   FOREIGN KEY (id_city) REFERENCES cities(id)
 );
 
-CREATE TABLE IF NOT EXISTS monthly_weathers (
-  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  month INT NOT NULL,
-  id_city INT,
-  created_on DATETIME NOT NULL DEFAULT NOW(),
-  updated_on DATETIME DEFAULT NULL ON UPDATE NOW(),
-  FOREIGN KEY (id_city) REFERENCES cities(id),
-  UNIQUE (id_city, month)
-);
-
 CREATE TABLE IF NOT EXISTS monthly_weathers_attributes (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  id_monthly_weather INT,
+  id_city INT,
   id_attribute INT,
+  month INT,
   value VARCHAR(255),
   description VARCHAR(255),
   created_on DATETIME NOT NULL DEFAULT NOW(),
   updated_on DATETIME DEFAULT NULL ON UPDATE NOW(),
+  FOREIGN KEY (id_city) REFERENCES cities(id),
   FOREIGN KEY (id_attribute) REFERENCES attributes(id),
-  FOREIGN KEY (id_monthly_weather) REFERENCES monthly_weathers(id),
-  UNIQUE (id_monthly_weather, id_attribute)
+  UNIQUE (id_city, id_attribute, month)
 );
 
 CREATE TABLE IF NOT EXISTS reviews (

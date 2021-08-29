@@ -149,13 +149,11 @@ class MySQLConnector:
         @param details: Details of the city to take the info of the weather tab.
         """
 
-        insert_monthly_weathers_query = "INSERT IGNORE INTO monthly_weathers (id_city, month) VALUES (%s, %s)"
-
         insert_monthly_weathers_attributes_query = """
         INSERT INTO monthly_weathers_attributes
-        (id_monthly_weather, id_attribute, value)
+        (id_city, id_attribute, month, value)
         -- description
-        VALUES (%s, %s, %s) as new
+        VALUES (%s, %s, %s, %s) as new
             ON DUPLICATE KEY UPDATE 
                 value = new.value
                 -- description = new.description
@@ -167,16 +165,8 @@ class MySQLConnector:
         attributes = self._upsert_tab_and_attributes(tab_name, tab_info)
 
         with self._client.cursor() as cursor:
-            # Inserting the months into monthly_weathers
-            cursor.executemany(insert_monthly_weathers_query, [(id_city, i + 1) for i in range(12)])
-            self._client.commit()
-
-            # Selecting the ids of the MONTHLY WEATHERS
-            cursor.execute(f"SELECT id FROM monthly_weathers WHERE id_city = '{id_city}' ORDER BY month ASC;")
-            months = [id_month for (id_month, ) in cursor.fetchall()]
-
             # Inserting ATTRIBUTE VALUES into monthly_weathers_attributes table
-            values = [(months[i], id_attribute, value)
+            values = [(id_city, id_attribute, i + 1, value)
                       for id_attribute, attribute in attributes
                       for i, [__, value] in enumerate(tab_info[attribute])]
             cursor.executemany(insert_monthly_weathers_attributes_query, values)
@@ -219,11 +209,11 @@ class MySQLConnector:
         pros = [(pro, 'P') for pro in pros_and_cons['pros']]
         cons = [(con, 'C') for con in pros_and_cons['cons']]
         # TODO: think how to avoid inserting duplicate rows without using the description as a UNIQUE constraint
-        #self._upsert_many('pros_and_cons', id_city, ['description', 'type'], pros + cons)
+        self._upsert_many('pros_and_cons', id_city, ['description', 'type'], pros + cons)
 
         # TODO scrap date
         # TODO insert only new data (using review date)
-        #self._upsert_many('reviews', id_city, ['description'], details['Reviews'])
+        self._upsert_many('reviews', id_city, ['description'], details['Reviews'])
 
         self._upsert_weather(id_city, details)
 
