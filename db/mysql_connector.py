@@ -13,16 +13,16 @@ class MySQLConnector:
         self._logger = logger
         self._client = self._connection()
 
-    @staticmethod
-    def _connection():
+    def _connection(self):
         """Knows how to connect to the MySQL Database."""
         conn_info = {'host': MYSQL['host'], 'user': MYSQL['user'], 'password': MYSQL['password'],
                      'database': MYSQL['database']}
+        self._logger.info("Connecting to the MySQL database...")
         return pymysql.connect(**conn_info)
 
     def _create_database(self):
         """Creates the MySQL Nomadlist Schema in which to store all the scrapped data."""
-        # CLI: mysql -u root -p < create_schemas.sql
+        # TODO CLI: mysql -u root -p < create_schemas.sql
         try:
             with open('create_schemas.sql, 'r'') as sql_code_file:
                 with self._client.cursor() as cursor:
@@ -66,19 +66,26 @@ class MySQLConnector:
         """
 
         with self._client.cursor() as cursor:
+            self._logger.info(f"Selecting the id of one of the {table}...")
+            self._logger.debug(select_query)
             cursor.execute(select_query)
             result = cursor.fetchone()
+            self._logger.debug(f"Result of the query: {result}")
 
             if result:
                 row_id, *other_values = result
                 differences = [other_value != values_tuple[i] for i, other_value in enumerate(other_values)]
 
                 if any(differences):
+                    self._logger.info(f"There are differences between the old and the new row. About to update it...")
+                    self._logger.debug(update_query)
                     cursor.execute(update_query)
                     self._client.commit()
 
                 return row_id
 
+            self._logger.info(f"Inserting the new row in the table {table}...")
+            self._logger.debug(f"Query: {insert_query} - Values: {values_tuple}")
             cursor.execute(insert_query, values_tuple)
             self._client.commit()
             row_id = cursor.lastrowid
@@ -100,6 +107,7 @@ class MySQLConnector:
 
         with self._client.cursor() as cursor:
             # TODO: insert only once all the tabs names.
+            self._logger.debug(f"Trying to insert a new tab {tab_name}")
             cursor.execute(insert_tabs_query, tab_name)
             self._client.commit()
 
@@ -108,11 +116,14 @@ class MySQLConnector:
             id_tab, = cursor.fetchone()
 
             # Inserting ATTRIBUTE NAMES into attributes table
-            cursor.executemany(insert_attributes_query, [(attribute, id_tab) for attribute in tab_info.keys()])
+            self._logger.info(f"Inserting attributes for the tab {tab_name}...")
+            values = [(attribute, id_tab) for attribute in tab_info.keys()]
+            self._logger.debug(f"Query: {insert_attributes_query} - Values: {values}")
+            cursor.executemany(insert_attributes_query, values)
             self._client.commit()
 
             # Selecting the ids of the ATTRIBUTE NAMES
-            cursor.execute(f"SELECT id, TRIM(name) FROM attributes WHERE id_tab = {id_tab};")
+            cursor.execute(f"SELECT id, name FROM attributes WHERE id_tab = {id_tab};")
             attributes = cursor.fetchall()
         return attributes
 
@@ -139,8 +150,10 @@ class MySQLConnector:
 
         with self._client.cursor() as cursor:
             # Inserting {tab_name} ATTRIBUTE VALUES into city_attributes table
+            self._logger.info(f"Inserting the value of the attributes for the tab {tab_name}...")
             values = [(id_city, id_attribute, tab_info.get(attribute))
                       for id_attribute, attribute in attributes if tab_info.get(attribute)]
+            self._logger.debug(f"Query: {insert_city_attributes_query} - Values: {values}")
             cursor.executemany(insert_city_attributes_query, values)
             self._client.commit()
 
@@ -169,9 +182,11 @@ class MySQLConnector:
 
         with self._client.cursor() as cursor:
             # Inserting ATTRIBUTE VALUES into monthly_weathers_attributes table
+            self._logger.info(f"Inserting the value of the attributes for the tab Weather...")
             values = [(id_city, id_attribute, i + 1, value)
                       for id_attribute, attribute in attributes
                       for i, [__, value] in enumerate(tab_info.get(attribute, []))]
+            self._logger.debug(f"Query: {insert_monthly_weathers_attributes_query} - Values: {values}")
             cursor.executemany(insert_monthly_weathers_attributes_query, values)
             self._client.commit()
 
@@ -189,11 +204,11 @@ class MySQLConnector:
         values_template = ', '.join(['%s'] * len(columns))
         insert_query = f"INSERT IGNORE INTO {table} ({', '.join(columns)}) VALUES ({values_template})"
 
-        values
-
         with self._client.cursor() as cursor:
+            self._logger.info(f"Upserting many values of the table {table}...")
             values = [(id_city,) + (tuple_of_values if isinstance(tuple_of_values, tuple) else (tuple_of_values,))
                       for tuple_of_values in values]
+            self._logger.debug(f"Query: {insert_query} - Values: {values}")
             cursor.executemany(insert_query, values)
             self._client.commit()
 
@@ -220,6 +235,7 @@ class MySQLConnector:
         """
 
         with self._client.cursor() as cursor:
+            self._logger.info(f"Inserting cities related to the current one...")
             cursor.executemany(insert_cities_query, cities)
             self._client.commit()
 
@@ -230,6 +246,8 @@ class MySQLConnector:
                     if name in details[type_name]:
                         relationships.append((id_city, id_related, i))
 
+            self._logger.info(f"Inserting all the city relationships...")
+            self._logger.debug(f"Query: {insert_cities_relationships_query} - Values: {relationships}")
             cursor.executemany(insert_cities_relationships_query, relationships)
             self._client.commit()
 
@@ -266,7 +284,7 @@ class MySQLConnector:
         self._insert_relationships(id_city, details)
 
     def filter_cities_by(self, *args, num_of_cities=None, country=None, continent=None, rank_from=None, rank_to=None,
-                         sorted_by, order, verbose=0, **kwargs):
+                         sorted_by, order, **kwargs):
         """Given the filter criteria, build a query to fetch the required cities from the database."""
 
         query = f"""
@@ -285,17 +303,14 @@ class MySQLConnector:
 
         query = "\n".join([re.sub(" +", " ", s) for s in filter(str.strip, query.splitlines())])
 
-        if verbose:
-            self._logger.info(f"About to execute the filter query: {query}")
+        self._logger.debug(f"About to execute the filter query: {query}")
 
         with self._client.cursor() as cursor:
-            if verbose:
-                self._logger.info("Executing the query...")
+            self._logger.info("Executing the query with all the filters...")
 
             cursor.execute(query)
             result = cursor.fetchall()
 
-            if verbose:
-                self._logger.info(f"Execution results: {result}")
+            self._logger.debug(f"Execution results: {result}")
 
         return result
