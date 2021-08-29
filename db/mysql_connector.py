@@ -1,4 +1,5 @@
 import pymysql
+from functools import reduce
 from conf import MYSQL
 
 
@@ -186,8 +187,48 @@ class MySQLConnector:
         values_template = ', '.join(['%s'] * len(columns))
         insert_query = f"INSERT IGNORE INTO {table} ({', '.join(columns)}) VALUES ({values_template})"
 
+        values
+
         with self._client.cursor() as cursor:
-            cursor.executemany(insert_query, [(id_city, *(tuple_of_values, )) for tuple_of_values in values])
+            values = [(id_city,) + (tuple_of_values if isinstance(tuple_of_values, tuple) else (tuple_of_values, ))
+                      for tuple_of_values in values]
+            cursor.executemany(insert_query, values)
+            self._client.commit()
+
+    def _insert_relationships(self, id_city, details):
+        """
+        Given the id of the current city and the details of it, insert the relationships between this city and the near,
+        next, or similar to it.
+
+        @param id_city: Id of the current city.
+        @param details: Dictionary with all the information about the current city.
+        """
+
+        types = ['Near', 'Next', 'Similar']
+        cities = set(reduce(lambda cities_names, key: cities_names + details[key], types, []))
+
+        insert_cities_query = "INSERT IGNORE INTO cities (name) VALUES (%s)"
+        selectable_cities = ','.join([f"'{city}'" for city in cities])
+        select_cities_query = f"SELECT id, name FROM cities WHERE name IN ({selectable_cities})"
+
+        insert_cities_relationships_query = """
+        INSERT IGNORE INTO cities_relationships
+        (id_city, id_related_city, type)
+        VALUES (%s, %s, %s)
+        """
+
+        with self._client.cursor() as cursor:
+            cursor.executemany(insert_cities_query, cities)
+            self._client.commit()
+
+            cursor.execute(select_cities_query)
+            relationships = []
+            for id_related, name in cursor.fetchall():
+                for i, type_name in enumerate(types):
+                    if name in details[type_name]:
+                        relationships.append((id_city, id_related, i))
+
+            cursor.executemany(insert_cities_relationships_query, relationships)
             self._client.commit()
 
     def insert_city_info(self, details):
@@ -217,24 +258,4 @@ class MySQLConnector:
 
         self._upsert_weather(id_city, details)
 
-    def _insert_city_info(self, details):
-        """Given the city, inserts all the necessary rows in the DB to store the scrapped data."""
-
-        # SQL Query statements for inserting scrapped data into the database:
-
-        insert_cities_relationships_query = """
-        INSERT INTO cities_relationships
-        (id_city, id_related_city, type)
-        VALUES (%s, %s, %s)        
-        """
-
-        # TODO: I STILL NEED TO DO STORAGE OF CITY RELATIONSHIPS
-        ##### Importing NEAR, NEXT and SIMILAR info into database #####
-        near_name = [key for key, value in details.items() if "near" in key.lower()]
-        near_values_list = [value for key, value in details.items() if "near" in key.lower()]
-
-        next_name = [key for key, value in details.items() if "next" in key.lower()]
-        next_values_list = [value for key, value in details.items() if "next" in key.lower()]
-
-        similar_name = [key for key, value in details.items() if "similar" in key.lower()]
-        similar_values_list = [value for key, value in details.items() if "similar" in key.lower()]
+        self._insert_relationships(id_city, details)

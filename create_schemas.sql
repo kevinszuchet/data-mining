@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS cities_relationships (
   created_on DATETIME NOT NULL DEFAULT NOW(),
   updated_on DATETIME DEFAULT NULL ON UPDATE NOW(),
   FOREIGN KEY (id_related_city) REFERENCES cities(id),
-  FOREIGN KEY (id_city) REFERENCES cities(id)
+  FOREIGN KEY (id_city) REFERENCES cities(id),
+  UNIQUE (id_city, id_related_city, type)
 );
 
 CREATE TABLE IF NOT EXISTS tabs (
