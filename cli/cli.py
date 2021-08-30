@@ -5,6 +5,8 @@ from cli.parser import SetupSchemasParser, ScrapeParser, FilterParser
 
 
 class CommandLineInterface:
+    """Class that handles the user interactions with the scrapper and the MySQL database via the command line."""
+
     def __init__(self):
         epilog = "Find more information at: https://github.com/kevinszuchet/data-mining"
         self._parser = argparse.ArgumentParser(description="This CLI controls the Nomad List Scrapper", prog="nls",
@@ -17,11 +19,14 @@ class CommandLineInterface:
         self._parse_args()
 
     def _add_parsers(self):
+        """Creates a nested parser for each command in the parsers dictionary,
+        and add the necessary arguments to interact with it using that command line."""
         for command, parser in self._parsers.items():
             nested_parser = self._sub_parser.add_parser(command, help=parser.help_message())
             parser.add(nested_parser)
 
     def _parse_args(self):
+        """Parse the arguments introduced by the users, and calls the necessary parser to handle those arguments."""
         inputs = vars(self._parser.parse_args())
         command = inputs['command']
         inputs.pop('command')

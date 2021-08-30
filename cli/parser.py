@@ -41,6 +41,8 @@ class Parser:
 
 
 class SetupSchemasParser(Parser):
+    """Parser that knows how to set up the MySQL schemas."""
+
     def __init__(self):
         super().__init__(help_message='Create the necessary schemas to store the scrape data into a MySQL database.')
 
@@ -49,6 +51,8 @@ class SetupSchemasParser(Parser):
 
 
 class ScrapeParser(Parser):
+    """Parser that knows how to scrape the cities using the NomadListScrapper."""
+
     def __init__(self):
         params = [
             {
@@ -71,6 +75,8 @@ class ScrapeParser(Parser):
 
 
 class FilterParser(Parser):
+    """Parser that knows how to use the MySQL connector to filter and sort the scrapped data."""
+
     def __init__(self):
         params = [
             {
