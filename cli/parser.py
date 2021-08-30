@@ -47,7 +47,7 @@ class SetupSchemasParser(Parser):
         super().__init__(help_message='Create the necessary schemas to store the scrape data into a MySQL database.')
 
     def parse(self, *args, **kwargs):
-        MySQLConnector(verbose=kwargs.get('verbose')).create_database(*args, **kwargs)
+        MySQLConnector.create_database(*args, **kwargs)
 
 
 class ScrapeParser(Parser):
@@ -129,5 +129,6 @@ class FilterParser(Parser):
         super().__init__(params=params, help_message='Fetch stored cities that match the filters.')
 
     def parse(self, *args, **kwargs):
-        results = MySQLConnector(verbose=kwargs.get('verbose')).filter_cities_by(*args, **kwargs)
-        print(tabulate(results, headers=['Rank', 'City', 'Country', 'Continent']), end='\n\n')
+        with MySQLConnector(verbose=kwargs.get('verbose')) as mysql_connector:
+            results = mysql_connector.filter_cities_by(*args, **kwargs)
+            print(tabulate(results, headers=['Rank', 'City', 'Country', 'Continent']), end='\n\n')

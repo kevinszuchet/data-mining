@@ -109,20 +109,20 @@ class NomadListScrapper:
         page_source = self._get_html(**kwargs)
         cities_lis = self._get_all_the_cities(page_source, **kwargs)
 
-        mysql_connector = MySQLConnector(self._logger)
+        with MySQLConnector(logger=self._logger) as mysql_connector:
+            for res in self._requests_to_city_details(cities_lis):
+                try:
+                    details = self._get_city_details(res)
+                    res.close()
+                    if details is None:
+                        self._logger.info(f"Nothing to append with this city :(")
+                        break
+                    self._logger.info(f"Storing new details...")
+                    mysql_connector.insert_city_info(details)
+                except HTTPError as e:
+                    self._logger.error(f"HTTPError raised: {e}")
+                except Exception as e:
+                    self._logger.error(f"Exception raised trying to get the city details: {e}", exc_info=self._verbose)
 
-        for res in self._requests_to_city_details(cities_lis):
-            try:
-                details = self._get_city_details(res)
-                res.close()
-                if details is None:
-                    self._logger.info(f"Nothing to append with this city :(")
-                    break
-                self._logger.info(f"Storing new details...")
-                mysql_connector.insert_city_info(details)
-            except HTTPError as e:
-                self._logger.error(f"HTTPError raised: {e}")
-            except Exception as e:
-                self._logger.error(f"Exception raised trying to get the city details: {e}", exc_info=self._verbose)
         self._logger.info('Scrapping finished')
         return
