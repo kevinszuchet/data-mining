@@ -38,7 +38,7 @@ class CommandLineInterface:
         try:
             self._parsers[command].parse(**inputs)
         except Exception as e:
-            Logger(verbose=inputs.get('verbose')).error(f"Exception raised: {e}", exc_info=inputs.get('verbose'))
+            Logger(verbose=inputs.get('verbose')).logger.error(f"Exception raised: {e}", exc_info=inputs.get('verbose'))
             sys.exit(1)
 
 
