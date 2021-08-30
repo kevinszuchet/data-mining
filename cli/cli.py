@@ -145,6 +145,7 @@ class CommandLineInterface:
             self._parsers[command]['method'](**inputs)
         except Exception as e:
             Logger().logger.error(f"Exception raised: {e}", exc_info=inputs.get('verbose'))
+            sys.exit(1)
 
     @staticmethod
     def setup_db(*args, **kwargs):

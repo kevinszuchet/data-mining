@@ -318,7 +318,7 @@ class MySQLConnector:
             JOIN continents continent ON country.id_continent = continent.id
             {attributes_joins if sorted_by in main_scores else ''}
             {where_clause.strip().rstrip(' AND ')}
-            ORDER BY {sorting_dict.get(sorted_by, 'attribute.value')} {order}
+            ORDER BY {sorting_dict.get(sorted_by, 'city_attribute.value')} {order}
             {f'LIMIT {num_of_cities}' if num_of_cities else ''}
             ;"""
 

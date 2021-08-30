@@ -4,11 +4,7 @@ from cli.cli import CommandLineInterface
 
 
 def main():
-    try:
-        CommandLineInterface()
-    except Exception as e:
-        Logger().logger.error(f"Exception raised: {e}")
-        sys.exit(1)
+    CommandLineInterface()
 
 
 if __name__ == "__main__":
