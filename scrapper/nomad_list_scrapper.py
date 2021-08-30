@@ -29,6 +29,8 @@ class NomadListScrapper:
 
         self._city_scrapper = CityScrapper(self._logger)
 
+        self._verbose = verbose
+
     def _load_html_from_disk(self):
         """Attempts to load the html locally"""
         try:
@@ -121,7 +123,6 @@ class NomadListScrapper:
             except HTTPError as e:
                 self._logger.error(f"HTTPError raised: {e}")
             except Exception as e:
-                # TODO: remove exc_info
-                self._logger.error(f"Exception raised trying to get the city details: {e}", exc_info=True)
+                self._logger.error(f"Exception raised trying to get the city details: {e}", exc_info=self._verbose)
         self._logger.info('Scrapping finished')
         return
