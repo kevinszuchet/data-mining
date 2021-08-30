@@ -10,12 +10,13 @@ LOGGER = {
     "CRITICAL": logging.CRITICAL,
 }
 
+# TODO: fix concurrency and repeated logs problem
 
 class Logger:
     def __init__(self, logger_level=LOGGER_LEVEL, verbose=False):
         # Initiating the logger object
         self.logger = logging.getLogger(__name__)
-        
+
         if verbose:
             logger_level = 'DEBUG'
 
