@@ -20,7 +20,7 @@ class MySQLConnector:
         self._logger.info("Connecting to the MySQL database...")
         return pymysql.connect(**conn_info)
 
-    def _create_database(self):
+    def create_database(self):
         """Creates the MySQL Nomadlist Schema in which to store all the scrapped data."""
         # TODO CLI: mysql -u root -p < create_schemas.sql
         try:
@@ -287,17 +287,38 @@ class MySQLConnector:
                          sorted_by, order, **kwargs):
         """Given the filter criteria, build a query to fetch the required cities from the database."""
 
+        main_scores = ['fun', 'internet', 'cost', 'safety']
+
+        attributes_joins = f"""
+        JOIN city_attributes city_attribute ON city.id = city_attribute.id_city
+        JOIN attributes attribute ON city_attribute.id_attribute = city_attribute.id
+            AND attribute.name = '{sorted_by.title()}'
+        JOIN tabs tab ON attribute.id_tab = tab.id AND tab.name = 'Scores'
+        """
+
+        where_clause = f"""
+        {'WHERE' if country or continent or rank_from or rank_to else ''}
+            {f'country.name = {country} AND ' if country else ''}
+            {f'continent.name = {continent} AND ' if continent else ''}
+            {f'city.city_rank >= {rank_from} AND ' if rank_from else ''}
+            {f'city.city_rank <= {rank_to} AND ' if rank_to else ''}
+        """
+
+        sorting_dict = {
+            'rank': 'city.city_rank',
+            'name': 'city.name',
+            'country': 'country.name',
+            'continent': 'continent.name'
+        }
+
         query = f"""
             SELECT city.city_rank, city.name, country.name, continent.name  
             FROM cities city
             JOIN countries country ON city.id_country = country.id
             JOIN continents continent ON country.id_continent = continent.id
-            {'WHERE' if country or continent or rank_from or rank_to else ''}
-                {f'country.name = {country} AND ' if country else ''}
-                {f'continent.name = {continent} AND ' if continent else ''}
-                {f'rank >= {rank_from} AND ' if rank_from else ''}
-                {f'rank <= {rank_to} AND ' if rank_to else ''}
-            ORDER BY {sorted_by} {order}
+            {attributes_joins if sorted_by in main_scores else ''}
+            {where_clause.strip().rstrip(' AND ')}
+            ORDER BY {sorting_dict.get(sorted_by, 'attribute.value')} {order}
             {f'LIMIT {num_of_cities}' if num_of_cities else ''}
             ;"""
 
