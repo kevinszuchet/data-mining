@@ -13,24 +13,38 @@ class MySQLConnector:
         if logger is None:
             logger = Logger(verbose=verbose).logger
         self._logger = logger
-        self._client = self._connection()
 
-    def _connection(self):
-        """Knows how to connect to the MySQL Database."""
-        conn_info = {'host': MYSQL['host'], 'user': MYSQL['user'], 'password': MYSQL['password'],
-                     'database': MYSQL['database']}
-        self._logger.info("Connecting to the MySQL database...")
-        return pymysql.connect(**conn_info)
+    def __enter__(self):
+        """Creates the connection when someone uses the with statement."""
+        self._connection = pymysql.connect(host=MYSQL['host'], user=MYSQL['user'], password=MYSQL['password'],
+                                           database=MYSQL['database'])
+        return self
 
-    def create_database(self, *args, **kwargs):
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Closes the connection to the SQL database."""
+        self._connection.close()
+
+    @staticmethod
+    def create_database(*args, **kwargs):
         """Creates the MySQL NomadList Schema in which to store all the scrapped data."""
-        try:
-            with open('create_schemas.sql, 'r'') as sql_code_file:
-                with self._client.cursor() as cursor:
-                    cursor.execute(sql_code_file.read(), multi=True)
-                    self._client.commit()
-        except Error as e:
-            print(e)
+
+        connection = pymysql.connect(host=MYSQL['host'], user=MYSQL['user'], password=MYSQL['password'])
+        with connection:
+            with open('create_schemas.sql', 'r') as sql_code_file:
+                script_file = sql_code_file.read()
+
+            with connection.cursor() as cursor:
+                for statement in script_file.split(';'):
+                    if not statement.strip():
+                        continue
+
+                    cursor.execute(statement)
+                    connection.commit()
+
+    def _to_sql_comparison(self, column, value):
+        """Given a column name and a value, builds the SQL equal comparison statement. Then, returns it."""
+        value = value if isinstance(value, int) or isinstance(value, float) else f"'{value}'"
+        return f"{column} = {value}"
 
     def _upsert_and_get_id(self, table, values_dict, domain_identifier=None):
         """
@@ -48,7 +62,7 @@ class MySQLConnector:
 
         columns = ', '.join(values_dict.keys())
 
-        filters = [f"{key} = '{value}'" for key, value in values_dict.items() if
+        filters = [self._to_sql_comparison(key, value) for key, value in values_dict.items() if
                    domain_identifier is None or key == domain_identifier or key in domain_identifier]
         where_clause = ' AND'.join(filters)
         select_query = f"SELECT id, {columns} FROM {table} WHERE {where_clause};"
@@ -61,12 +75,7 @@ class MySQLConnector:
         VALUES ({', '.join(['%s'] * len(values_dict))})
         """
 
-        update_query = f"""
-        UPDATE TABLE {table}
-        SET ({', '.join([f"{key} = '{value}'" for key, value in values_dict.items()])})
-        """
-
-        with self._client.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             self._logger.info(f"Selecting the id of one of the {table}...")
             self._logger.debug(select_query)
             cursor.execute(select_query)
@@ -78,17 +87,23 @@ class MySQLConnector:
                 differences = [other_value != values_tuple[i] for i, other_value in enumerate(other_values)]
 
                 if any(differences):
+                    update_query = f"""
+                    UPDATE {table}
+                    SET {', '.join([self._to_sql_comparison(key, value) for key, value in values_dict.items()])}
+                    WHERE id = {row_id}
+                    """
+
                     self._logger.info(f"There are differences between the old and the new row. About to update it...")
-                    self._logger.debug(update_query)
+                    self._logger.info(f"Query: {update_query}")
                     cursor.execute(update_query)
-                    self._client.commit()
+                    self._connection.commit()
 
                 return row_id
 
             self._logger.info(f"Inserting the new row in the table {table}...")
             self._logger.debug(f"Query: {insert_query} - Values: {values_tuple}")
             cursor.execute(insert_query, values_tuple)
-            self._client.commit()
+            self._connection.commit()
             row_id = cursor.lastrowid
 
         return row_id
@@ -106,11 +121,11 @@ class MySQLConnector:
         insert_tabs_query = "INSERT IGNORE INTO tabs (name) VALUES (%s)"
         insert_attributes_query = "INSERT IGNORE INTO attributes (name, id_tab) VALUES (%s, %s)"
 
-        with self._client.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             # TODO: insert only once all the tabs names.
             self._logger.debug(f"Trying to insert a new tab {tab_name}")
             cursor.execute(insert_tabs_query, tab_name)
-            self._client.commit()
+            self._connection.commit()
 
             # Selecting the id of the tab name {tab_name}
             cursor.execute(f"SELECT id FROM tabs WHERE name = '{tab_name}';")
@@ -121,7 +136,7 @@ class MySQLConnector:
             values = [(attribute, id_tab) for attribute in tab_info.keys()]
             self._logger.debug(f"Query: {insert_attributes_query} - Values: {values}")
             cursor.executemany(insert_attributes_query, values)
-            self._client.commit()
+            self._connection.commit()
 
             # Selecting the ids of the ATTRIBUTE NAMES
             cursor.execute(f"SELECT id, name FROM attributes WHERE id_tab = {id_tab};")
@@ -149,14 +164,14 @@ class MySQLConnector:
 
         attributes = self._upsert_tab_and_attributes(tab_name, tab_info)
 
-        with self._client.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             # Inserting {tab_name} ATTRIBUTE VALUES into city_attributes table
             self._logger.info(f"Inserting the value of the attributes for the tab {tab_name}...")
             values = [(id_city, id_attribute, tab_info.get(attribute))
                       for id_attribute, attribute in attributes if tab_info.get(attribute)]
             self._logger.debug(f"Query: {insert_city_attributes_query} - Values: {values}")
             cursor.executemany(insert_city_attributes_query, values)
-            self._client.commit()
+            self._connection.commit()
 
     def _upsert_weather(self, id_city, details):
         """
@@ -181,7 +196,7 @@ class MySQLConnector:
 
         attributes = self._upsert_tab_and_attributes(tab_name, tab_info)
 
-        with self._client.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             # Inserting ATTRIBUTE VALUES into monthly_weathers_attributes table
             self._logger.info(f"Inserting the value of the attributes for the tab Weather...")
             values = [(id_city, id_attribute, i + 1, value)
@@ -189,7 +204,7 @@ class MySQLConnector:
                       for i, [__, value] in enumerate(tab_info.get(attribute, []))]
             self._logger.debug(f"Query: {insert_monthly_weathers_attributes_query} - Values: {values}")
             cursor.executemany(insert_monthly_weathers_attributes_query, values)
-            self._client.commit()
+            self._connection.commit()
 
     def _upsert_many(self, table, id_city, columns, values):
         """
@@ -205,13 +220,13 @@ class MySQLConnector:
         values_template = ', '.join(['%s'] * len(columns))
         insert_query = f"INSERT IGNORE INTO {table} ({', '.join(columns)}) VALUES ({values_template})"
 
-        with self._client.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             self._logger.info(f"Upserting many values of the table {table}...")
             values = [(id_city,) + (tuple_of_values if isinstance(tuple_of_values, tuple) else (tuple_of_values,))
                       for tuple_of_values in values]
             self._logger.debug(f"Query: {insert_query} - Values: {values}")
             cursor.executemany(insert_query, values)
-            self._client.commit()
+            self._connection.commit()
 
     def _insert_relationships(self, id_city, details):
         """
@@ -235,10 +250,10 @@ class MySQLConnector:
         VALUES (%s, %s, %s)
         """
 
-        with self._client.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             self._logger.info(f"Inserting cities related to the current one...")
             cursor.executemany(insert_cities_query, cities)
-            self._client.commit()
+            self._connection.commit()
 
             cursor.execute(select_cities_query)
             relationships = []
@@ -250,7 +265,7 @@ class MySQLConnector:
             self._logger.info(f"Inserting all the city relationships...")
             self._logger.debug(f"Query: {insert_cities_relationships_query} - Values: {relationships}")
             cursor.executemany(insert_cities_relationships_query, relationships)
-            self._client.commit()
+            self._connection.commit()
 
     def insert_city_info(self, details):
         """Given the details of the city, insert all the necessary rows to store it in the database."""
@@ -327,7 +342,7 @@ class MySQLConnector:
 
         self._logger.debug(f"About to execute the filter query: {query}")
 
-        with self._client.cursor() as cursor:
+        with self._connection.cursor() as cursor:
             self._logger.info("Executing the query with all the filters...")
 
             cursor.execute(query)
