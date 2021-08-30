@@ -2,15 +2,20 @@ import sys
 import argparse
 from tabulate import tabulate
 from db.mysql_connector import MySQLConnector
+from logger import Logger
 from scrapper.nomad_list_scrapper import NomadListScrapper
 
-# TODO handle abbreviations
+
 # TODO verbose implies a higher level of logs
 
 class CommandLineInterface:
+    optional_kwargs = ['type', 'action', 'choices', 'default']
+
     def __init__(self):
+        epilog = "Find more information at: https://github.com/kevinszuchet/data-mining"
         self._parser = argparse.ArgumentParser(description="This CLI controls the Nomad List Scrapper", prog="nls",
-                                               epilog="Find more information at: https://github.com/jonatankruszewski/data-mining")
+                                               epilog=epilog,
+                                               allow_abbrev=False)
         self._load_parsers()
         self._sub_parser = self._parser.add_subparsers(dest="command")
         self._add_parsers()
@@ -20,26 +25,37 @@ class CommandLineInterface:
     def _load_parsers(self):
         # TODO: list of Parser instances
         self._parsers = {
+            'setup-db-schemas': {
+                'method': CommandLineInterface.setup_db,
+                'help_message': 'Create the necessary schemas to store the scrape data into a MySQL database.',
+                'params': [
+                    {
+                        'name': 'verbose,v',
+                        'positional': False,
+                        'action': 'store_true',
+                        'help': 'Verbosity level.'
+                    }
+                ]
+            },
             'scrape': {
                 'method': CommandLineInterface.scrap_cities,
                 'help_message': 'Scrap specific cities from the Nomad List site.',
                 'params': [
                     {
-                        'name': 'num-of-cities',
+                        'name': 'num-of-cities,n',
                         'positional': False,
                         'type': int,
                         'help': 'Number of required cities.'
                     },
                     {
-                        'name': 'scrolls',
+                        'name': 'scrolls,s',
                         'positional': False,
                         'type': int,
                         'help': 'Number of scrolls to make in the site to fetch the cities cities.'
                     },
                     {
-                        'name': 'verbose',
+                        'name': 'verbose,v',
                         'positional': False,
-                        'default': False,
                         'action': 'store_true',
                         'help': 'Verbosity level.'
                     }
@@ -50,7 +66,7 @@ class CommandLineInterface:
                 'help_message': 'Fetch stored cities that match the filters.',
                 'params': [
                     {
-                        'name': 'num-of-cities',
+                        'name': 'num-of-cities,n',
                         'positional': False,
                         'type': int,
                         'help': 'Number of required cities.'
@@ -85,8 +101,8 @@ class CommandLineInterface:
                         'type': str,
                         'help': 'Sorting criteria.',
                         # TODO we could offer combinations (name, rank for example)
-                        'choices': ['city_rank', 'name', 'country', 'continent', 'cost', 'internet', 'fun', 'safety'],
-                        'default': 'city_rank'
+                        'choices': ['rank', 'name', 'country', 'continent', 'cost', 'internet', 'fun', 'safety'],
+                        'default': 'rank'
                     },
                     {
                         'name': 'order',
@@ -97,9 +113,8 @@ class CommandLineInterface:
                         'default': 'ASC'
                     },
                     {
-                        'name': 'verbose',
+                        'name': 'verbose,v',
                         'positional': False,
-                        'default': False,
                         'action': 'store_true',
                         'help': 'Verbosity level.'
                     }
@@ -111,15 +126,11 @@ class CommandLineInterface:
         for command, parser in self._parsers.items():
             nested_parser = self._sub_parser.add_parser(command, help=parser['help_message'])
             for subcommand in parser['params']:
-                argument_name = subcommand['name'] if subcommand['positional'] else f"--{subcommand['name']}"
-                if subcommand.get('action'):
-                    nested_parser.add_argument(argument_name, action=subcommand.get('action'), help=subcommand['help'])
-                else:
-                    nested_parser.add_argument(argument_name, type=subcommand['type'],
-                                               choices=subcommand.get('choices'),
-                                               default=subcommand.get('default'),
-                                               nargs=subcommand.get('nargs'),
-                                               help=subcommand['help'])
+                names = subcommand['name'].split(',')
+                argument_names = names if subcommand['positional'] else [f"--{name}" if len(name) > 1 else f"-{name}"
+                                                                         for name in names]
+                kwargs = {opt: subcommand.get(opt) for opt in self.optional_kwargs if subcommand.get(opt)}
+                nested_parser.add_argument(*argument_names, **kwargs, help=subcommand['help'])
 
     def _parse_args(self):
         inputs = vars(self._parser.parse_args())
@@ -130,7 +141,14 @@ class CommandLineInterface:
             self._parser.print_help()
             sys.exit(0)
 
-        self._parsers[command]['method'](**inputs)
+        try:
+            self._parsers[command]['method'](**inputs)
+        except Exception as e:
+            Logger().logger.error(f"Exception raised: {e}", exc_info=inputs.get('verbose'))
+
+    @staticmethod
+    def setup_db(*args, **kwargs):
+        MySQLConnector().create_database(*args, **kwargs)
 
     @staticmethod
     def scrap_cities(*args, **kwargs):
