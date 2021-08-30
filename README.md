@@ -28,6 +28,7 @@ The information on each city is taken from the tabs that are displayed when a ci
     + [Database Creation](#database-creation)
   * [Usage](#usage)
     + [Command Line Interface (CLI)](#command-line-interface-(cli))
+  * [Storage](#storage)
   * [Project Status](#project-status)
   * [Roadmap](#roadmap)
   * [Authors](#authors)
@@ -119,8 +120,58 @@ in the Terminal (macOS/Linux) or the Command LIne (Windows) and then running the
    python3 main.py
    ```
 
-The web scrapper can also be run by loading the _main.py_ file in a Python IDE like Pycharm or IDLE and running the 
-file there.
+By running the code above, the program will display the manual of the CLI. It would be the same as if you run:
+
+   ```bash
+   python3 main.py --help
+   ```
+
+### Command Line Interface (CLI)
+
+The CLI allows interacting with the Nomad List Scrapper. It knows how to create the database schemas, how to scrape the cities from the stie, and how to fetch some scrapped cities from the database according to a number of filters that the user can provide.
+
+  * __Database setup__: Create the necessary schemas to store the scrape data into a MySQL database.
+    ```bash
+    python3 main.py setup-db [-h] [--verbose]
+
+    Options:
+      -h, --help
+      -v, --verbose: Verbosity level.
+    ```
+
+  * __Scrape cities from Nomad List__: Scrap specific cities from the Nomad List site.
+      ```bash
+      python3 main.py scrape [-h] [--num-of-cities NUM_OF_CITIES] [--scrolls SCROLLS] [--verbose]
+
+      optional arguments:
+        -h, --help
+        -n --num-of-cities:   Number of required cities.
+        -s --scrolls:         Number of scrolls to make in the site to fetch the cities cities.
+        -v --verbose:         Verbosity level.
+      ```
+
+  * __Filter the scrapped cities__: Fetch stored cities that match the filters.
+      ```bash
+      python3 main.py filter [-h] [--num-of-cities NUM_OF_CITIES] [--country COUNTRY] [--continent CONTINENT]
+                             [--rank-from RANK_FROM] [--rank-to RANK_TO]
+                             [--sorted-by SORTING_CRITERIA] [--order SORTING_ORDER] [--verbose]
+
+      Options:
+        -h, --help
+        -n, --num-of-cities:  Number of required cities.
+        --country:            Name of the country.
+        --continent:          Name of the continent.
+        --rank-from:          From rank <rank-from>.
+        --rank-to:            To rank <rank-to>.
+        --sorted-by:          Sorting criteria.
+                              {rank,name,country,continent,cost,internet,fun,safety}
+        --order:              Order of sorting.
+                              {ASC,DESC}
+        -v, --verbose:        Verbosity level.
+    ```
+
+
+The web scrapper can be run by loading the _main.py_ file in a Python IDE like Pycharm or IDLE and running the file there with a special configuration. It will need the corresponding arguments (scrape [OPTIONS]) in order to fetch the cities from the site, and store them in MySQL.
 
 The code in _main.py_ will call the NomadListScrapper class in _nomad_list_scrapper.py_ file, which is responsible for 
 handling the scrapper in the [Nomad List](https://nomadlist.com/) website. The class NomadListScrapper creates an 
@@ -128,10 +179,9 @@ object of the CityScrapper class, which is the class that actually scrapes the i
 so by accessing the various scrapping functions in the TabScrapper class in _tab_scrapper.py_ file.
 
 The web scrapper, once it has completed scrapping all the information from [Nomad List](https://nomadlist.com/), 
-saves all the data to a JSON file called _data.json_. The _data.json_ file is saved in the same directory as 
-_main.py_.
+saves all the data into the configured database.
 
-### Command Line Interface (CLI)
+## Storage
 ...
 
 ## Project Status
