@@ -1,6 +1,6 @@
 # Nomad List Web Scrapper
 
-The Nomad LIst Web Scrapper, as the name states, is a program that navigates to every city on the 
+The Nomad List Web Scrapper, as the name states, is a program that navigates to every city on the 
 [Nomad List](https://nomadlist.com/) homepage and scraps all the information that [Nomad List](https://nomadlist.com/) 
 has on each and every one of these cities. The goal of this program is to make the vast amounts of information on 
 [Nomad List](https://nomadlist.com/) more accessible to the user, so that they can more easily _find the best place in 
@@ -35,14 +35,14 @@ The information on each city is taken from the tabs that are displayed when a ci
 
 - Coding Language: Python 3 🐍
 - Main Packages: [requests](https://docs.python-requests.org/en/master/), 
-  [bs4](https://www.crummy.com/software/BeautifulSoup/), [selenium](https://selenium-python.readthedocs.io/).
+  [bs4](https://www.crummy.com/software/BeautifulSoup/), [selenium](https://selenium-python.readthedocs.io/), [argparse](https://docs.python.org/3/library/argparse.html), [PyMySQL](https://pymysql.readthedocs.io/en/latest/index.html).
 
 ## Installation
 Before running the program it is recommended that the following installation steps are carried out:
 
 1. Clone the repo by running the following code in Git Bash
    ```bash
-   gh repo clone jonatankruszewski/data-mining
+   gh repo clone kevinszuchet/data-mining
    ```
 2. Install the dependencies (eg: Beautiful Soup, Requests, etc) required to run the program by executing the following 
    code in the Terminal (macOS/Linux) or Command Line (Windows):
@@ -53,17 +53,21 @@ Before running the program it is recommended that the following installation ste
 ### Configurations
 
 You may configure an env var to make Selenium works. Selenium, in order to run, needs the path to the chrome driver 
-in your computer.
+in your computer. Although, you can choose which MySQL host you want to use.
 
 For Linux users:
 
 ```bash
-export CHROME_DRIVER_PATH = '/path/to/chrome/driver'
+export NOMAD_LIST_CHROME_DRIVER_PATH = '/path/to/chrome/driver'
+export NOMAD_LIST_MYSQL_HOST = 'your_host'
+export NOMAD_LIST_MYSQL_USER = 'your_user'
+export NOMAD_LIST_MYSQL_PASSWORD = 'your_password'
+export NOMAD_LIST_MYSQL_DATABASE = 'nomad_list'
 ```
 or
 
 ```bash
-CHROME_DRIVER_PATH='/path/to/chrome/driver' python3 main.py
+NOMAD_LIST_CHROME_DRIVER_PATH='/path/to/chrome/driver' NOMAD_LIST_MYSQL_HOST='your_host' NOMAD_LIST_MYSQL_USER='your_user' NOMAD_LIST_MYSQL_PASSWORD='your_password' NOMAD_LIST_MYSQL_DATABASE='nomad_list' python3 main.py
 ```
 
 For MacOs users:
@@ -73,6 +77,16 @@ brew install chromedriver
 
 #Grant access:
 xattr -d com.apple.quarantine /usr/local/bin/chromedriver
+```
+
+A better option is to create a `.env` in the root of the project to avoid passing manually each variable every time you want to run the program. You only need to set the name of the variable equals the value of it.
+
+```
+NOMAD_LIST_CHROME_DRIVER_PATH='/path/to/chrome/driver'
+NOMAD_LIST_MYSQL_HOST='your_host'
+NOMAD_LIST_MYSQL_USER='your_user'
+NOMAD_LIST_MYSQL_PASSWORD='your_password'
+NOMAD_LIST_MYSQL_DATABASE='nomad_list'
 ```
 
 ## Usage
