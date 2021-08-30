@@ -16,7 +16,7 @@ LOG_FILE = "logs.log"
 LOG_FORMAT = '%(asctime)s-%(levelname)s-FILE:%(filename)s-FUNC:%(funcName)s-LINE:%(lineno)d-%(message)s'
 
 JSON_FILENAME = "data.json"
-LOGGER_LEVEL = "DEBUG"
+LOGGER_LEVEL = "INFO"
 PAGE_SOURCE = "page_source.html"
 LOAD_HTML_FROM_DISK = False
 SCROLL = True

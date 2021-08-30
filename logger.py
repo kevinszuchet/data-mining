@@ -12,12 +12,15 @@ LOGGER = {
 
 
 class Logger:
-    def __init__(self):
+    def __init__(self, logger_level=LOGGER_LEVEL, verbose=False):
         # Initiating the logger object
         self.logger = logging.getLogger(__name__)
+        
+        if verbose:
+            logger_level = 'DEBUG'
 
         # Set the level of the logger.
-        self.logger.setLevel(LOGGER.get(LOGGER_LEVEL, logging.ERROR))
+        self.logger.setLevel(LOGGER.get(logger_level, logging.ERROR))
 
         # Format the logs structure so that every line would include the time, name, level name and log message
         formatter = logging.Formatter(LOG_FORMAT)

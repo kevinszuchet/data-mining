@@ -144,20 +144,20 @@ class CommandLineInterface:
         try:
             self._parsers[command]['method'](**inputs)
         except Exception as e:
-            Logger().logger.error(f"Exception raised: {e}", exc_info=inputs.get('verbose'))
+            Logger(verbose=inputs.get('verbose')).error(f"Exception raised: {e}", exc_info=inputs.get('verbose'))
             sys.exit(1)
 
     @staticmethod
     def setup_db(*args, **kwargs):
-        MySQLConnector().create_database(*args, **kwargs)
+        MySQLConnector(verbose=kwargs.get('verbose')).create_database(*args, **kwargs)
 
     @staticmethod
     def scrap_cities(*args, **kwargs):
-        NomadListScrapper().scrap_cities(*args, **kwargs)
+        NomadListScrapper(verbose=kwargs.get('verbose')).scrap_cities(*args, **kwargs)
 
     @staticmethod
     def filter_by(*args, **kwargs):
-        results = MySQLConnector().filter_cities_by(*args, **kwargs)
+        results = MySQLConnector(verbose=kwargs.get('verbose')).filter_cities_by(*args, **kwargs)
         print(tabulate(results, headers=['Rank', 'City', 'Country', 'Continent']), end='\n\n')
 
 

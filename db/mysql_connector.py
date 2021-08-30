@@ -8,8 +8,10 @@ import re
 class MySQLConnector:
     """Class that knows how to handle the connection with MySQL."""
 
-    def __init__(self, logger=Logger().logger):
+    def __init__(self, logger=None, verbose=False):
         # TODO: singleton to save the ids of the tabs in a Class dict
+        if logger is None:
+            logger = Logger(verbose=verbose).logger
         self._logger = logger
         self._client = self._connection()
 
