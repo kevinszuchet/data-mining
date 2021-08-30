@@ -25,7 +25,9 @@ The information on each city is taken from the tabs that are displayed when a ci
   * [Technologies Used](#technologies-used)
   * [Installation](#installation)
     + [Environment Variables](#environment-variables)
+    + [Database Creation](#database-creation)
   * [Usage](#usage)
+    + [Command Line Interface (CLI)](#command-line-interface-(cli))
   * [Project Status](#project-status)
   * [Roadmap](#roadmap)
   * [Authors](#authors)
@@ -50,7 +52,7 @@ Before running the program it is recommended that the following installation ste
    pip3 install -r requirements.txt
    ```
 
-### Configurations
+### Environment variables
 
 You may configure an env var to make Selenium works. Selenium, in order to run, needs the path to the chrome driver 
 in your computer. Although, you can choose which MySQL host you want to use.
@@ -89,6 +91,20 @@ NOMAD_LIST_MYSQL_PASSWORD='your_password'
 NOMAD_LIST_MYSQL_DATABASE='nomad_list'
 ```
 
+### Database Creation
+
+The database can be created by two different ways. The first one, via the command line:
+
+```
+mysql -u root -p < create_schemas.sql
+```
+
+The second one, using the provided [CLI]().
+
+```bash
+python3 main.py setup-db
+```
+
 ## Usage
 The program can be executed by navigating to the directory where the data-mining program has been saved by running
 the command:
@@ -113,7 +129,10 @@ so by accessing the various scrapping functions in the TabScrapper class in _tab
 
 The web scrapper, once it has completed scrapping all the information from [Nomad List](https://nomadlist.com/), 
 saves all the data to a JSON file called _data.json_. The _data.json_ file is saved in the same directory as 
-_main.py_. 
+_main.py_.
+
+### Command Line Interface (CLI)
+...
 
 ## Project Status
 Project is: _in progress_
