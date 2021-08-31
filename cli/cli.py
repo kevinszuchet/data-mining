@@ -1,5 +1,5 @@
 import sys
-import argparse
+import argparse, argcomplete
 from logger import Logger
 from cli.parser import SetupSchemasParser, ScrapeParser, FilterParser
 
@@ -15,7 +15,7 @@ class CommandLineInterface:
         self._parsers = {'setup-db': SetupSchemasParser(), 'scrape': ScrapeParser(), 'filter': FilterParser()}
         self._sub_parser = self._parser.add_subparsers(dest="command")
         self._add_parsers()
-
+        argcomplete.autocomplete(self._parser)
         self._parse_args()
 
     def _add_parsers(self):

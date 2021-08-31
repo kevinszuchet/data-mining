@@ -120,6 +120,12 @@ in the Terminal (macOS/Linux) or the Command LIne (Windows) and then running the
    python3 main.py
    ```
 
+It is also possible to run the following command if the main.py have execution permissions.
+
+   ```bash
+   ./main.py
+   ```
+
 By running the code above, the program will display the manual of the CLI. It would be the same as if you run:
 
    ```bash
@@ -170,7 +176,6 @@ The CLI allows interacting with the Nomad List Scrapper. It knows how to create 
         -v, --verbose:        Verbosity level.
     ```
 
-
 The web scrapper can be run by loading the _main.py_ file in a Python IDE like Pycharm or IDLE and running the file there with a special configuration. It will need the corresponding arguments (scrape [OPTIONS]) in order to fetch the cities from the site, and store them in MySQL.
 
 The code in _main.py_ will call the NomadListScrapper class in _nomad_list_scrapper.py_ file, which is responsible for 
@@ -180,6 +185,24 @@ so by accessing the various scrapping functions in the TabScrapper class in _tab
 
 The web scrapper, once it has completed scrapping all the information from [Nomad List](https://nomadlist.com/), 
 saves all the data into the configured database.
+
+#### Autocompletion
+
+For taking advantage of the autocompletion, we installed the [`argcomplete`](https://kislyuk.github.io/argcomplete/) module.
+
+To configure it, with all the requirements installed, it is necessary to run the following commands in the terminal:
+
+Linux:
+
+```bash
+activate-global-python-argcomplete --user
+
+sudo mv ~/.bash_completion.d/python-argcomplete /etc/.bash_completion.d
+```
+
+It's not mandatory to move the autocompletion file to the `/etc/.bash_completion.d` directory. But, it would have to be [globally accessible](https://kislyuk.github.io/argcomplete/#activating-global-completion).
+
+After reset the terminal, the tab completion will be ready to be used. 
 
 ## Storage
 ...

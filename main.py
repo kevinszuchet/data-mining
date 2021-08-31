@@ -1,5 +1,6 @@
-import sys
-from logger import Logger
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
+
 from cli.cli import CommandLineInterface
 
 
