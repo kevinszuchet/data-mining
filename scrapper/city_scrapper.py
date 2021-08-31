@@ -16,20 +16,20 @@ class CityScrapper:
         Given the tab and the soup object, dynamically builds a tab scrapper that depends on the name of the tab,
         and gets all the information of it. Then, returns that information as a dict "{tab_name: tab_information}"
         """
-        # self._logger.info("Getting the tab information...")
         tab_name = TabScrapper.get_name(tab)
-        # self._logger.debug(f"Tab with name {tab_name}: {tab}")
+        self._logger.info(f"Getting the {tab_name} tab information...")
+        self._logger.debug(f"Tab with name {tab_name}: {tab}")
         dynamic_tab_scrapper = eval(f"{tab_name}TabScrapper")
-        # self._logger.debug(f"DynamicTabScrapper: {dynamic_tab_scrapper}")
+        self._logger.debug(f"DynamicTabScrapper: {dynamic_tab_scrapper}")
         return dynamic_tab_scrapper(city_details_soup, logger=self._logger).get_information()
 
     def valid_tag(self, city_li):
         """Given the city li, checks if the tag is valid."""
-        # self._logger.debug(f"Validating the city li tag: {city_li.prettify()}")
         if city_li is None:
             return False
 
         attrs = city_li.attrs
+        self._logger.debug(f"Validating the city li tag: {attrs}")
         city_url = self.get_city_url(city_li)
         self._logger.debug(f"City li url: {city_url}")
         return attrs.get('data-type') == 'city' and not CityScrapper.city_template_re.search(attrs.get('data-slug')) \
@@ -52,22 +52,25 @@ class CityScrapper:
         try:
             city_details_soup = BeautifulSoup(city_details_html, "html.parser")
             text = city_details_soup.find(class_="text")
-            # self._logger.debug(f"City details - <div class=\"text\">...<div>: {text}")
 
             if not text:
                 return
-            self._logger.info('Fetching tabs info...')
+
+            city = text.h1.text if text.h1 else "-"
+            country = text.h2.text if text.h2 else "-"
+
+            self._logger.info(f'Fetching the info of {city}, {country}')
 
             tabs = city_details_soup.find("div", class_="tabs").find("div", class_="ul").find_all("h2", class_="li")
-            # self._logger.debug(f"City details - Tabs: {tabs}")
+            self._logger.debug(f"{city}, {country} tabs: {tabs}")
             tabs_information = {TabScrapper.get_name(tab): self._get_tab_information(tab, city_details_soup)
                                 for tab in tabs if TabScrapper.is_valid(tab)}
-            # self._logger.debug(f"City details - Tabs Information: {tabs_information}")
-            # self._logger.info(f"All the information about {city}, {country} was fetched!")
+
+            self._logger.info(f"All the information about {city}, {country} was fetched!")
 
             return {
-                'city': text.h1.text if text.h1 else "-",
-                'country': text.h2.text if text.h2 else "-",
+                'city': city,
+                'country': country,
                 'continent': DigitalNomadGuideTabScrapper(city_details_soup).get_continent(),
                 'rank': int(ScoresTabScrapper(city_details_soup).get_rank()),
                 **tabs_information

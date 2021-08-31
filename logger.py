@@ -32,10 +32,15 @@ class Logger:
 
         # file_handler.setLevel(logging.ERROR)
         file_handler.setFormatter(formatter)
-        self.logger.addHandler(file_handler)
 
         # Create a stream handler and add it to logger
         stream_handler = logging.StreamHandler(sys.stdout)
         # stream_handler.setLevel(logging.ERROR)
         stream_handler.setFormatter(formatter)
+
+        # Avoid duplicating logs
+        if self.logger.hasHandlers():
+            self.logger.handlers.clear()
+
+        self.logger.addHandler(file_handler)
         self.logger.addHandler(stream_handler)

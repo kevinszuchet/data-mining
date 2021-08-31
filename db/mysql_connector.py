@@ -234,7 +234,7 @@ class MySQLConnector:
         insert_query = f"INSERT IGNORE INTO {table} ({', '.join(columns)}) VALUES ({values_template})"
 
         with self._connection.cursor() as cursor:
-            self._logger.info(f"Upserting many values of the table {table}...")
+            self._logger.info(f"Upserting many values in the table {table}...")
             values = [(id_city,) + (tuple_of_values if isinstance(tuple_of_values, tuple) else (tuple_of_values,))
                       for tuple_of_values in values]
             self._logger.debug(f"Query: {insert_query} - Values: {values}")

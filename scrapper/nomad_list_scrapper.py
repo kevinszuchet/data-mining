@@ -9,6 +9,9 @@ import sys
 from logger import Logger
 from scrapper.web_driver import WebDriver
 
+SHOULD_USE_THE_HTML_FILE = os.path.exists(cfg.PAGE_SOURCE) and os.getenv(
+    'ENV') != "production" and cfg.LOAD_HTML_FROM_DISK
+
 
 class NomadListScrapper:
     """Class responsible to handle the scrapper in the Nomad List site."""
@@ -52,13 +55,11 @@ class NomadListScrapper:
     def _get_html(self, **kwargs):
         """Gets the Main HTML file which contents will be scrapped"""
         self._logger.info('Retrieving base Html file')
-        should_fetch_and_dump_from_disk = os.path.exists(cfg.PAGE_SOURCE) and os.getenv(
-            'ENV') != "production" and cfg.LOAD_HTML_FROM_DISK
-        if should_fetch_and_dump_from_disk:
+        if SHOULD_USE_THE_HTML_FILE:
             page_source = self._load_html_from_disk()
         else:
             page_source = self._driver.get_page_source(**kwargs)
-            if should_fetch_and_dump_from_disk:
+            if SHOULD_USE_THE_HTML_FILE:
                 self._write_html_to_disk(page_source)
                 self._logger.info('New Html written to disk')
 
@@ -84,21 +85,24 @@ class NomadListScrapper:
     def _requests_to_city_details(self, cities_lis):
         """Checks if the lis are valid, takes the valid ones and make the requests to the city details page."""
         self._logger.debug(f'Number of Cities: {len(cities_lis)}')
-        self._logger.debug(f"Fetching more info for the cities.... This might take time.")
-        cities_urls = (
-            grequests.get(f"{self._base_url}{self._city_scrapper.get_city_url(x)}", headers=cfg.HEADERS, stream=False)
-            for x in cities_lis if self._city_scrapper.valid_tag(x))
+        self._logger.info(f"Fetching more info of the cities.... This might take time.")
+        req_kwargs = {'headers': cfg.HEADERS, 'stream': False}
+        cities_urls = (grequests.get(f"{self._base_url}{self._city_scrapper.get_city_url(city_li)}", **req_kwargs)
+                       for city_li in cities_lis if self._city_scrapper.valid_tag(city_li))
         return (grequests.map(cities_urls, size=cfg.NOMAD_LIST_REQUESTS_BATCH_SIZE,
                               exception_handler=self._exception_handler))
 
     def _get_city_details(self, res):
+        """Try to get the details of the city using the content of the response. If the request failed,
+        raises the appropriate an exception."""
         city_details_html = res.content
-        self._logger.info(f"The status code of {res.request.url} was {res.status_code}")
+        self._logger.debug(f"The status code of {res.request.url} was {res.status_code}")
         # Raises HTTPError, if one occurred.
         res.raise_for_status()
         return self._city_scrapper.get_city_details(city_details_html)
 
     def _exception_handler(self, req, error):
+        """Logs the error of the requests."""
         self._logger.error(f"Error making the request {req}: {error}")
 
     def scrap_cities(self, *args, **kwargs):
