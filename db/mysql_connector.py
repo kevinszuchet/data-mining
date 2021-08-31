@@ -107,7 +107,7 @@ class MySQLConnector:
                     """
 
                     self._logger.info(f"There are differences between the old and the new row. About to update it...")
-                    self._logger.info(f"Query: {update_query}")
+                    self._logger.debug(f"Query: {update_query}")
                     cursor.execute(update_query)
                     self._connection.commit()
 
@@ -315,15 +315,6 @@ class MySQLConnector:
                          sorted_by, order, **kwargs):
         """Given the filter criteria, build a query to fetch the required cities from the database."""
 
-        main_scores = ['fun', 'internet', 'cost', 'safety']
-
-        attributes_joins = f"""
-        JOIN city_attributes city_attribute ON city.id = city_attribute.id_city
-        JOIN attributes attribute ON city_attribute.id_attribute = city_attribute.id
-            AND attribute.name = '{sorted_by.title()}'
-        JOIN tabs tab ON attribute.id_tab = tab.id AND tab.name = 'Scores'
-        """
-
         where_clause = f"""
         {'WHERE' if country or continent or rank_from or rank_to else ''}
             {f'country.name = {country} AND ' if country else ''}
@@ -336,17 +327,34 @@ class MySQLConnector:
             'rank': 'city.city_rank',
             'name': 'city.name',
             'country': 'country.name',
-            'continent': 'continent.name'
+            'continent': 'continent.name',
+            'cost': 'SUM(case when attribute.name LIKE \'%Cost\' THEN city_attribute.value END)',
+            'internet': 'SUM(case when attribute.name LIKE \'%Internet\' THEN city_attribute.value END)',
+            'fun': 'SUM(case when attribute.name LIKE \'%Fun\' THEN city_attribute.value END)',
+            'safety': 'SUM(case when attribute.name LIKE \'%Safety\' THEN city_attribute.value END)'
         }
 
+        order_by_clause = f"""
+        ORDER BY {sorting_dict.get(sorted_by, 'city.city_rank')} {order}
+        """
+
         query = f"""
-            SELECT city.city_rank, city.name, country.name, continent.name  
+            SELECT city.city_rank, city.name, country.name, continent.name
+                GROUP_CONCAT(case when attribute.name LIKE '%Cost' THEN city_attribute.description END) Cost,
+                GROUP_CONCAT(case when attribute.name LIKE '%Internet' THEN city_attribute.description END) Internet,
+                GROUP_CONCAT(case when attribute.name LIKE '%Fun' THEN city_attribute.description END) Fun,
+                GROUP_CONCAT(case when attribute.name LIKE '%Safety' THEN city_attribute.description END) Safety  
             FROM cities city
             JOIN countries country ON city.id_country = country.id
             JOIN continents continent ON country.id_continent = continent.id
-            {attributes_joins if sorted_by in main_scores else ''}
+            JOIN city_attributes city_attribute ON city.id = city_attribute.id_city
+            JOIN attributes attribute ON city_attribute.id_attribute = attribute.id
+                AND (attribute.name LIKE "%Cost" OR attribute.name LIKE '%Internet' OR attribute.name LIKE '%Fun' 
+                    OR attribute.name LIKE '%Safety')
+            JOIN tabs tab ON attribute.id_tab = tab.id AND tab.name = 'Scores'
             {where_clause.strip().rstrip(' AND ')}
-            ORDER BY {sorting_dict.get(sorted_by, 'city_attribute.value')} {order}
+            GROUP BY city.city_rank, city.name, country.name, continent.name
+            {order_by_clause}
             {f'LIMIT {num_of_cities}' if num_of_cities else ''}
             ;"""
 
