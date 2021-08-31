@@ -205,7 +205,7 @@ It's not mandatory to move the autocompletion file to the `/etc/.bash_completion
 After reset the terminal, the tab completion will be ready to be used. 
 
 ## Storage
-...
+To run the scrapper using a local MySQL, follow the [MySQL Installation Guide](https://dev.mysql.com/doc/mysql-installation-excerpt/5.7/en/) to configure the localhost.
 
 ## Project Status
 Project is: _in progress_
