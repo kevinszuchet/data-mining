@@ -28,18 +28,31 @@ class MySQLConnector:
     def create_database(*args, **kwargs):
         """Creates the MySQL NomadList Schema in which to store all the scrapped data."""
 
+        logger = Logger(verbose=kwargs.get('verbose')).logger
         connection = pymysql.connect(host=MYSQL['host'], user=MYSQL['user'], password=MYSQL['password'])
+
+        logger.info("Connection to the MySQL host opened!")
+
         with connection:
+            logger.info("About to read the SQL file to create the schemas...")
             with open('create_schemas.sql', 'r') as sql_code_file:
                 script_file = sql_code_file.read()
 
+            logger.info(f"The file was read.")
+
             with connection.cursor() as cursor:
-                for statement in script_file.split(';'):
+                statements = script_file.split(';')
+                logger.debug(f"Cursor created. Now, it's time to execute the {len(statements)} different statements.")
+                for statement in statements:
                     if not statement.strip():
                         continue
 
+                    # Would it be necessary to log the statements?
+                    # logger.debug(f"Executing the follow statement...\n{statement}")
                     cursor.execute(statement)
                     connection.commit()
+
+            logger.info("Script successfully executed!")
 
     def _to_sql_comparison(self, column, value):
         """Given a column name and a value, builds the SQL equal comparison statement. Then, returns it."""

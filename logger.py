@@ -10,6 +10,7 @@ LOGGER = {
     "CRITICAL": logging.CRITICAL,
 }
 
+
 # TODO: fix concurrency and repeated logs problem
 
 class Logger:
