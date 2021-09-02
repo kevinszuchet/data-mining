@@ -6,6 +6,8 @@ import re
 
 
 # TODO: we could avoid all the selections and inserts statements with the tabs and attributes...
+# TODO: Singleton with a dict of tabs and attributes keys.
+
 class MySQLConnector:
     """Class that knows how to handle the connection with MySQL."""
 
@@ -101,7 +103,7 @@ class MySQLConnector:
 
                 if any(differences):
                     update_query = f"""
-                    UPDATE {table}
+                    UPDATE IGNORE {table}
                     SET {', '.join([self._to_sql_comparison(key, value) for key, value in values_dict.items()])}
                     WHERE id = {row_id}
                     """
@@ -205,7 +207,7 @@ class MySQLConnector:
         """
 
         tab_name = 'Weather'
-        tab_info = details['Weather']
+        tab_info = details.get('Weather', {})
 
         attributes = self._upsert_tab_and_attributes(tab_name, tab_info)
 
@@ -251,7 +253,7 @@ class MySQLConnector:
         """
 
         types = ['Near', 'Next', 'Similar']
-        cities = set(reduce(lambda cities_names, key: cities_names + details[key], types, []))
+        cities = set(reduce(lambda cities_names, key: cities_names + details.get(key), types, []))
 
         insert_cities_query = "INSERT IGNORE INTO cities (name) VALUES (%s)"
         selectable_cities = ','.join([f"'{city}'" for city in cities])
@@ -272,7 +274,7 @@ class MySQLConnector:
             relationships = []
             for id_related, name in cursor.fetchall():
                 for i, type_name in enumerate(types):
-                    if name in details[type_name]:
+                    if name in details.get(type_name, []):
                         relationships.append((id_city, id_related, i))
 
             self._logger.info(f"Inserting all the city relationships...")
@@ -283,29 +285,29 @@ class MySQLConnector:
     def insert_city_info(self, details):
         """Given the details of the city, insert all the necessary rows to store it in the database."""
 
-        id_continent = self._upsert_and_get_id("continents", {'name': details['continent']},
+        id_continent = self._upsert_and_get_id("continents", {'name': details.get('continent')},
                                                domain_identifier='name')
 
-        country = {'name': details['country'], 'id_continent': id_continent}
+        country = {'name': details.get('country'), 'id_continent': id_continent}
         id_country = self._upsert_and_get_id("countries", country, domain_identifier='name')
 
-        city = {'name': details['city'], 'city_rank': details['rank'], 'id_country': id_country}
+        city = {'name': details.get('city'), 'city_rank': details.get('rank'), 'id_country': id_country}
         id_city = self._upsert_and_get_id("cities", city, domain_identifier='name')
 
-        self._upsert_key_value_tab_info(id_city, 'Scores', details['Scores'])
-        self._upsert_key_value_tab_info(id_city, 'Digital Nomad Guide', details['DigitalNomadGuide'])
-        self._upsert_key_value_tab_info(id_city, 'Cost of Living', details['CostOfLiving'])
+        self._upsert_key_value_tab_info(id_city, 'Scores', details.get('Scores', {}))
+        self._upsert_key_value_tab_info(id_city, 'Digital Nomad Guide', details.get('DigitalNomadGuide', {}))
+        self._upsert_key_value_tab_info(id_city, 'Cost of Living', details.get('CostOfLiving', {}))
 
-        self._upsert_many('photos', id_city, ['src'], details['Photos'])
+        self._upsert_many('photos', id_city, ['src'], details.get('Photos', []))
 
-        pros_and_cons = details['ProsAndCons']
-        pros = [(pro, 'P') for pro in pros_and_cons['pros']]
-        cons = [(con, 'C') for con in pros_and_cons['cons']]
+        pros_and_cons = details.get('ProsAndCons')
+        pros = [(pro, 'P') for pro in pros_and_cons.get('pros')]
+        cons = [(con, 'C') for con in pros_and_cons.get('cons')]
         # TODO: think how to avoid inserting duplicate rows without using the description as a UNIQUE constraint
         self._upsert_many('pros_and_cons', id_city, ['description', 'type'], pros + cons)
 
         # TODO insert only new data (using review date)
-        self._upsert_many('reviews', id_city, ['description'], details['Reviews'])
+        self._upsert_many('reviews', id_city, ['description'], details.get('Reviews', []))
 
         self._upsert_weather(id_city, details)
 
