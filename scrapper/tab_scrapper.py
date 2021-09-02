@@ -1,5 +1,6 @@
 import time
 import re
+import itertools
 import requests as rq
 from bs4 import BeautifulSoup
 from logger import Logger
@@ -55,7 +56,8 @@ class KeyValueTabScrapper(TabScrapper):
 
     def _get_key(self, key_column):
         """Given the key column it takes and returns the text of the column."""
-        return key_column.get_text(strip=True)
+        # return key_column.get_text(strip=True)
+        return key_column.text
 
     def _get_value(self, value_column):
         """Given the value column it takes and returns the text of the column."""
@@ -70,7 +72,7 @@ class KeyValueTabScrapper(TabScrapper):
         for row in table.find_all('tr'):
             row_key, row_value = row.find(class_='key'), row.find(class_='value')
             key, value = self._get_key(row_key), self._get_value(row_value)
-            info_dict.update({key: value})
+            info_dict.update({key.split(" ", 1)[-1]: value})
 
         return info_dict
 
@@ -85,6 +87,17 @@ class ScoresTabScrapper(KeyValueTabScrapper):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-ranking show")
 
+    # def _get_value(self, value_column):
+    #     """Override the super class method. Given the value column it takes and returns the text of the value."""
+    #     # TODO get Rating Value, Best Rating, and Width
+    #     return value_column.div.div.text
+    #
+    # def get_rank(self):
+    #     """Given the city details soup, knows how to take the rank number."""
+    #     details = self._tab.find("table", class_="details")
+    #     rank = self.rank_re.match(details.find("td", class_="value").get_text()).groups()
+    #     return rank
+
     def _get_value(self, value_column):
         """Override the super class method. Given the value column it takes and returns the text of the value."""
         # TODO get Rating Value, Best Rating, and Width
@@ -95,6 +108,40 @@ class ScoresTabScrapper(KeyValueTabScrapper):
         details = self._tab.find("table", class_="details")
         rank, = self.rank_re.match(details.find("td", class_="value").get_text()).groups()
         return rank
+
+    def get_bar_value(self, value_column):
+        """Given the city details soup, knows how to take the percentage that the bar is filled."""
+        find_style_div = value_column.div.find("div", attrs={'class': 'filling'}).attrs.get("style")
+
+        if find_style_div is None:
+            bar_value = None
+        else:
+            bar_value = find_style_div.split(':', 1)[-1]
+
+        return bar_value
+
+    def _get_information(self):
+        """
+        Iterates over all the rows in the table, builds a dict with the keys and values columns and, returns the dict.
+        """
+        info_dict = {}
+        table = self._tab.find('table', class_='details')
+        for row in table.find_all('tr'):
+            row_key, row_value = row.find(class_='key'), row.find(class_='value')
+            key, value, bar_value = self._get_key(row_key), self._get_value(row_value), self.get_bar_value(row_value)
+
+            if key.split(" ", 1)[-1] == 'Overall score':
+                info_dict.update({key.split(" ", 1)[-1]: [value.split(" ", 1)[0], self.get_rank(), bar_value]})
+            elif key.split(" ", 1)[-1] == 'Temperature (now)':  # Temp value is saved in Celsius
+                info_dict.update({key.split(" ", 1)[-1]: [value.split(":", 1)[0].split(" ", 1)[-1],
+                                                          value.split(":", 1)[-1].split("°C", 1)[0].lstrip(), bar_value]})
+            elif ': ' in value or ":" in value:
+                info_dict.update({key.split(" ", 1)[-1]: [value.split(":", 1)[0].split(" ", 1)[-1],
+                                                          value.split(":", 1)[-1].lstrip(), bar_value]})
+            else:
+                info_dict.update({key.split(" ", 1)[-1]: [value, "", bar_value]})
+
+        return info_dict
 
 
 class DigitalNomadGuideTabScrapper(KeyValueTabScrapper):
@@ -107,6 +154,25 @@ class DigitalNomadGuideTabScrapper(KeyValueTabScrapper):
     def get_continent(self):
         """Given the city details soup, knows how to take the rank number."""
         return self._tab.find("table", class_="details").find("td", class_="value").get_text()
+
+    def get_information(self):
+        """
+        Iterates over all the rows in the table, builds a dict with the keys and values columns and, returns the dict.
+        """
+        info_dict = {}
+        table = self._tab.find('table', class_='details')
+        for row in table.find_all('tr'):
+            row_key, row_value = row.find(class_='key'), row.find(class_='value')
+            key, value = self._get_key(row_key), self._get_value(row_value)
+
+            if key.split(" ", 1)[-1] == 'Weather (now)':    # Temp value is saved in Celsius
+                info_dict.update({key.split(" ", 1)[-1]: value.split("°C", 1)[0].split(" ", 1)[-1].lstrip()})
+            elif 'Air quality' in key.split(" ", 1)[-1]:
+                info_dict.update({key.split(" ", 1)[-1]: f'{int("".join(filter(str.isdigit, value.split("US AQI", 1)[0])))} US AQI'})
+            else:
+                info_dict.update({key.split(" ", 1)[-1]: value})
+
+        return info_dict
 
 
 class CostOfLivingTabScrapper(KeyValueTabScrapper):
@@ -176,7 +242,31 @@ class WeatherTabScrapper(TabScrapper):
             key = cols[0].get_text()
             # TODO Get rid of empty values
             # TODO Contemplate percents, imperial, metric and other units (now the value is all the text together)
-            weather_dict.update({key: [(months[i], col.get_text(strip=True)) for i, col in enumerate(cols[1:])]})
+            if key in ['Feels', 'Real']:
+                weather_dict.update({key: [(months[i], col.find("span", class_="metric").get_text(strip=True),
+                                            col.find("span", class_="").get_text(strip=True))
+                                           for i, col in enumerate(cols[1:])]})
+            elif key in ['Humidity', 'Rain', 'Cloud', 'Air quality', 'Sun']:
+                weather_dict.update({key: [(months[i],
+                                            ["".join(x) for _, x in
+                                             itertools.groupby(col.get_text(strip=False), key=str.isdigit)][0],
+                                            ["".join(x) for _, x in
+                                             itertools.groupby(col.get_text(strip=False), key=str.isdigit)][1] +
+                                            ["".join(x) for _, x in
+                                             itertools.groupby(col.get_text(strip=False), key=str.isdigit)][2]
+                                            )
+                                           for i, col in enumerate(cols[1:])]})
+            else:
+                weather_dict.update({key: [(months[i],
+                                            ["".join(x) for _, x in
+                                             itertools.groupby(col.get_text(strip=False), key=str.isdigit)][0] +
+                                            ["".join(x) for _, x in
+                                             itertools.groupby(col.get_text(strip=False), key=str.isdigit)][1] +
+                                            ["".join(x) for _, x in
+                                             itertools.groupby(col.get_text(strip=False), key=str.isdigit)][2],
+                                            ["".join(x) for _, x in
+                                             itertools.groupby(col.get_text(strip=False), key=str.isdigit)][3])
+                                           for i, col in enumerate(cols[1:])]})
 
         return weather_dict
 
