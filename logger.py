@@ -11,8 +11,6 @@ LOGGER = {
 }
 
 
-# TODO: fix concurrency and repeated logs problem
-
 class Logger:
     def __init__(self, logger_level=LOGGER_LEVEL, verbose=False):
         # Initiating the logger object

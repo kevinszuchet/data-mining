@@ -4,9 +4,9 @@ import conf as cfg
 import time
 
 
-# TODO Context Manager
-
 class WebDriver:
+    # TODO: Context Manager (Nice to have)
+
     def __init__(self, logger, base_url):
         self._base_url = base_url
         self._logger = logger
