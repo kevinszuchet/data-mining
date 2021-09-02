@@ -1,4 +1,5 @@
 import re
+import conf as cfg
 from .tab_scrapper import *
 from bs4 import BeautifulSoup
 
@@ -10,6 +11,7 @@ class CityScrapper:
 
     def __init__(self, logger):
         self._logger = logger
+        self._base_url = cfg.NOMAD_LIST_URL
 
     def _get_tab_information(self, tab, city_details_soup):
         """
@@ -22,6 +24,11 @@ class CityScrapper:
         dynamic_tab_scrapper = eval(f"{tab_name}TabScrapper")
         self._logger.debug(f"DynamicTabScrapper: {dynamic_tab_scrapper}")
         return dynamic_tab_scrapper(city_details_soup, logger=self._logger).get_information()
+
+    def get_rank(self, city_li):
+        rank = city_li.attrs.get('data-i')
+        if rank:
+            return int(rank)
 
     def valid_tag(self, city_li):
         """Given the city li, checks if the tag is valid."""
@@ -40,11 +47,11 @@ class CityScrapper:
         try:
             a = city_li.find("a")
             if a:
-                return a.attrs.get("href").strip()
+                return f"{self._base_url}{a.attrs.get('href').strip()}"
         except(AttributeError, KeyError) as e:
             self._logger.error(f"Error trying to get the city url {e}")
 
-    def get_city_details(self, city_details_html):
+    def get_city_details(self, rank, city_details_html):
         """
         Given the city details html, takes all the available information about the city within the tabs.
         Then, returns a dict with all that information.
@@ -58,8 +65,9 @@ class CityScrapper:
 
             city = text.h1.text if text.h1 else "-"
             country = text.h2.text if text.h2 else "-"
+            rank = rank or int(ScoresTabScrapper(city_details_soup).get_rank())
 
-            self._logger.info(f'Fetching the info of {city}, {country}')
+            self._logger.info(f'Fetching the info of {city}, {country} with rank #{rank}')
 
             tabs = city_details_soup.find("div", class_="tabs").find("div", class_="ul").find_all("h2", class_="li")
             self._logger.debug(f"{city}, {country} tabs: {tabs}")
@@ -72,7 +80,7 @@ class CityScrapper:
                 'city': city,
                 'country': country,
                 'continent': DigitalNomadGuideTabScrapper(city_details_soup).get_continent(),
-                'rank': int(ScoresTabScrapper(city_details_soup).get_rank()),
+                'rank': rank,
                 **tabs_information
             }
         except(AttributeError, KeyError) as e:

@@ -23,14 +23,10 @@ class NomadListScrapper:
         if web_driver is None:
             web_driver = WebDriver(logger, cfg.NOMAD_LIST_URL)
 
-        self._base_url = cfg.NOMAD_LIST_URL
+        self._city_scrapper = CityScrapper(logger)
+
         self._driver = web_driver
         self._logger = logger
-
-        # Beautiful soup
-        self._cities_lis = None
-
-        self._city_scrapper = CityScrapper(self._logger)
 
         self._verbose = verbose
 
@@ -66,7 +62,7 @@ class NomadListScrapper:
         self._driver.close()
         return page_source
 
-    def _get_all_the_cities(self, page_source, num_of_cities=None, **kwargs):
+    def _get_cities(self, page_source, num_of_cities=None, **kwargs):
         """Scroll to the end of the main page fetching all the cities as li tags."""
         try:
             if page_source is None:
@@ -79,31 +75,42 @@ class NomadListScrapper:
             self._logger.debug(f"Cities achieved")
             return cities_lis if num_of_cities is None else cities_lis[:num_of_cities]
         except(AttributeError, KeyError) as e:
-            self._logger.error(f"Error trying to find all the cities in the page source: {e}")
+            self._logger.error(f"Error trying to fetch the cities in the page source: {e}")
             sys.exit(1)
 
-    def _requests_to_city_details(self, cities_lis):
-        """Checks if the lis are valid, takes the valid ones and make the requests to the city details page."""
-        self._logger.debug(f'Number of Cities: {len(cities_lis)}')
+    def _fetch_details(self, lis):
+        """Checks if the lis are valid, takes the valid ones and make the requests to the city details page.."""
+        self._logger.debug(f'Number of Cities: {len(lis)}')
         self._logger.info(f"Fetching more info of the cities.... This might take time.")
-        req_kwargs = {'headers': cfg.HEADERS, 'stream': False}
-        cities_urls = (grequests.get(f"{self._base_url}{self._city_scrapper.get_city_url(city_li)}", **req_kwargs)
-                       for city_li in cities_lis if self._city_scrapper.valid_tag(city_li))
-        return (grequests.map(cities_urls, size=cfg.NOMAD_LIST_REQUESTS_BATCH_SIZE,
-                              exception_handler=self._exception_handler))
 
-    def _get_city_details(self, res):
-        """Try to get the details of the city using the content of the response. If the request failed,
-        raises the appropriate an exception."""
-        city_details_html = res.content
-        self._logger.debug(f"The status code of {res.request.url} was {res.status_code}")
-        # Raises HTTPError, if one occurred.
-        res.raise_for_status()
-        return self._city_scrapper.get_city_details(city_details_html)
+        def _get_and_set_rank(city_li):
+            return grequests.get(self._city_scrapper.get_city_url(city_li), headers=cfg.HEADERS, stream=False,
+                                 callback=lambda r, **kwargs: self._set_rank(r, city_li))
+
+        reqs = (_get_and_set_rank(li) for li in lis if self._city_scrapper.valid_tag(li))
+
+        map_kwargs = {'size': cfg.NOMAD_LIST_REQUESTS_BATCH_SIZE, 'exception_handler': self._exception_handler}
+        return grequests.imap(reqs, **map_kwargs)
+
+    def _set_rank(self, r, city_li, **kwargs):
+        """Given the response and a City Li, takes the rank of the main page, and set it as a response header."""
+        r.headers.update({'rank': self._city_scrapper.get_rank(city_li)})
+        return r
 
     def _exception_handler(self, req, error):
         """Logs the error of the requests."""
         self._logger.error(f"Error making the request {req.url}: {error}.\n The response was: {req.response}")
+
+    def _map_details(self, res):
+        """Try to get the details of the city using the content of the response. If the request failed,
+        raises the appropriate an exception."""
+        city_details_html = res.content
+        self._logger.debug(f"The status code of {res.request.url} was {res.status_code}.")
+
+        # Raises HTTPError, if one occurred.
+        res.raise_for_status()
+
+        return self._city_scrapper.get_city_details(res.headers.get('rank'), city_details_html)
 
     def scrap_cities(self, *args, **kwargs):
         """
@@ -111,29 +118,37 @@ class NomadListScrapper:
         Then, returns a list of dicts with all the cities.
         """
         page_source = self._get_html(**kwargs)
-        cities_lis = self._get_all_the_cities(page_source, **kwargs)
+        cities_lis = self._get_cities(page_source, **kwargs)
 
         total = successes = failures = 0
 
         with MySQLConnector(logger=self._logger) as mysql_connector:
-            for res in self._requests_to_city_details(cities_lis):
+            for res in self._fetch_details(cities_lis):
+
                 try:
-                    details = self._get_city_details(res)
+                    details = self._map_details(res)
                     res.close()
+
                     if details is None:
                         self._logger.info(f"Nothing to append with this city :(")
-                        break
+                        continue
+
                     self._logger.info(f"Storing new details...")
                     mysql_connector.insert_city_info(details)
                     successes += 1
                 except HTTPError as e:
                     failures += 1
-                    self._logger.error(f"HTTPError raised: {e}")
+                    self._logger.error(f"HTTPError raised: {e}", exc_info=self._verbose)
                 except Exception as e:
                     failures += 1
                     self._logger.error(f"Exception raised trying to get the city details: {e}", exc_info=self._verbose)
                 finally:
                     total += 1
 
-        self._logger.info(f'Scrapping finished.\n\tTotal scrapped cities: {total}.\n\t\t- Successes: {successes}\n\t\t- Failures: {failures}')
+        self._logger.info(f"""
+        Scrapping finished.
+            - Total scrapped cities: {total}.
+                - Successes: {successes}
+                - Failures: {failures}
+        """)
         return
