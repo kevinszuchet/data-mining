@@ -87,20 +87,8 @@ class ScoresTabScrapper(KeyValueTabScrapper):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-ranking show")
 
-    # def _get_value(self, value_column):
-    #     """Override the super class method. Given the value column it takes and returns the text of the value."""
-    #     # TODO get Rating Value, Best Rating, and Width
-    #     return value_column.div.div.text
-    #
-    # def get_rank(self):
-    #     """Given the city details soup, knows how to take the rank number."""
-    #     details = self._tab.find("table", class_="details")
-    #     rank = self.rank_re.match(details.find("td", class_="value").get_text()).groups()
-    #     return rank
-
     def _get_value(self, value_column):
         """Override the super class method. Given the value column it takes and returns the text of the value."""
-        # TODO get Rating Value, Best Rating, and Width
         return value_column.div.div.text
 
     def get_rank(self):
@@ -240,8 +228,6 @@ class WeatherTabScrapper(TabScrapper):
         for row in rows[1:]:
             cols = row.find_all('td')
             key = cols[0].get_text()
-            # TODO Get rid of empty values
-            # TODO Contemplate percents, imperial, metric and other units (now the value is all the text together)
             if key in ['Feels', 'Real']:
                 weather_dict.update({key: [(months[i], col.find("span", class_="metric").get_text(strip=True),
                                             col.find("span", class_="").get_text(strip=True))
