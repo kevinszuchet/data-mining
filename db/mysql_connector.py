@@ -257,11 +257,10 @@ class MySQLConnector:
         """
 
         types = ['Near', 'Next', 'Similar']
-        cities = set(reduce(lambda cities_names, key: cities_names + details.get(key), types, []))
+        cities = list(set(reduce(lambda cities_names, key: cities_names + details.get(key), types, [])))
 
         insert_cities_query = "INSERT IGNORE INTO cities (name) VALUES (%s)"
-        selectable_cities = ','.join([f"'{city}'" for city in cities])
-        select_cities_query = f"SELECT id, name FROM cities WHERE name IN ({selectable_cities})"
+        select_cities_query = f"SELECT id, name FROM cities WHERE name IN ({', '.join(['%s'] * len(cities))})"
 
         insert_cities_relationships_query = """
         INSERT IGNORE INTO cities_relationships
@@ -274,7 +273,9 @@ class MySQLConnector:
             cursor.executemany(insert_cities_query, cities)
             self._connection.commit()
 
-            cursor.execute(select_cities_query)
+            self._logger.info(f"Selecting ids from the related cities...")
+            self._logger.debug(f"Query: {select_cities_query} - Values: {cities}")
+            cursor.execute(select_cities_query, cities)
             relationships = []
             for id_related, name in cursor.fetchall():
                 for i, type_name in enumerate(types):
@@ -323,8 +324,8 @@ class MySQLConnector:
 
         where_clause = f"""
         {'WHERE' if country or continent or rank_from or rank_to else ''}
-            {f'country.name = {country} AND ' if country else ''}
-            {f'continent.name = {continent} AND ' if continent else ''}
+            {f"country.name = '{country}' AND " if country else ""}
+            {f"continent.name = '{continent}' AND " if continent else ""}
             {f'city.city_rank >= {rank_from} AND ' if rank_from else ''}
             {f'city.city_rank <= {rank_to} AND ' if rank_to else ''}
         """
@@ -345,7 +346,7 @@ class MySQLConnector:
         """
 
         query = f"""
-            SELECT city.city_rank, city.name, country.name, continent.name
+            SELECT city.city_rank, city.name, country.name, continent.name,
                 GROUP_CONCAT(case when attribute.name LIKE '%Cost' THEN city_attribute.description END) Cost,
                 GROUP_CONCAT(case when attribute.name LIKE '%Internet' THEN city_attribute.description END) Internet,
                 GROUP_CONCAT(case when attribute.name LIKE '%Fun' THEN city_attribute.description END) Fun,
