@@ -44,7 +44,14 @@ class SetupSchemasParser(Parser):
     """Parser that knows how to set up the MySQL schemas."""
 
     def __init__(self):
-        super().__init__(help_message='Create the necessary schemas to store the scrape data into a MySQL database.')
+        params = [{
+            'name': 'force,f',
+            'positional': False,
+            'action': 'store_true',
+            'help': 'Force the database creation dropping all the existing schemas, and creating them all again. Use it carefully.'
+        }]
+        super().__init__(params=params,
+                         help_message='Create the necessary schemas to store the scrape data into a MySQL database.')
 
     def parse(self, *args, **kwargs):
         MySQLConnector.create_database(*args, **kwargs)

@@ -1,3 +1,4 @@
+DROP DATABASE IF EXISTS nomad_list;
 CREATE DATABASE IF NOT EXISTS nomad_list;
 
 USE nomad_list;
@@ -21,7 +22,7 @@ CREATE TABLE IF NOT EXISTS countries (
 CREATE TABLE IF NOT EXISTS cities (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) UNIQUE,
-  city_rank INT UNIQUE,
+  city_rank INT,
   id_country INT,
   created_on DATETIME NOT NULL DEFAULT NOW(),
   updated_on DATETIME DEFAULT NULL ON UPDATE NOW(),

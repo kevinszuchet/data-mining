@@ -32,6 +32,7 @@ class MySQLConnector:
 
         logger = Logger(verbose=kwargs.get('verbose')).logger
         connection = pymysql.connect(host=MYSQL['host'], user=MYSQL['user'], password=MYSQL['password'])
+        force = kwargs.get('force', False)
 
         logger.info("Connection to the MySQL host opened!")
 
@@ -47,6 +48,9 @@ class MySQLConnector:
                 logger.debug(f"Cursor created. Now, it's time to execute the {len(statements)} different statements.")
                 for statement in statements:
                     if not statement.strip():
+                        continue
+
+                    if statement.lower().strip().startswith('drop') and not force:
                         continue
 
                     # Would it be necessary to log the statements?
