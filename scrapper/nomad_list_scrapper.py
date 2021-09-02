@@ -103,7 +103,7 @@ class NomadListScrapper:
 
     def _exception_handler(self, req, error):
         """Logs the error of the requests."""
-        self._logger.error(f"Error making the request {req}: {error}")
+        self._logger.error(f"Error making the request {req.url}: {error}.\n The response was: {req.response}")
 
     def scrap_cities(self, *args, **kwargs):
         """
@@ -112,6 +112,8 @@ class NomadListScrapper:
         """
         page_source = self._get_html(**kwargs)
         cities_lis = self._get_all_the_cities(page_source, **kwargs)
+
+        total = successes = failures = 0
 
         with MySQLConnector(logger=self._logger) as mysql_connector:
             for res in self._requests_to_city_details(cities_lis):
@@ -123,10 +125,15 @@ class NomadListScrapper:
                         break
                     self._logger.info(f"Storing new details...")
                     mysql_connector.insert_city_info(details)
+                    successes += 1
                 except HTTPError as e:
+                    failures += 1
                     self._logger.error(f"HTTPError raised: {e}")
                 except Exception as e:
+                    failures += 1
                     self._logger.error(f"Exception raised trying to get the city details: {e}", exc_info=self._verbose)
+                finally:
+                    total += 1
 
-        self._logger.info('Scrapping finished')
+        self._logger.info(f'Scrapping finished.\n\tTotal scrapped cities: {total}.\n\t\t- Successes: {successes}\n\t\t- Failures: {failures}')
         return
