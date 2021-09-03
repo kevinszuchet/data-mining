@@ -119,15 +119,15 @@ class ScoresTabScrapper(KeyValueTabScrapper):
             key, value, bar_value = self._get_key(row_key), self._get_value(row_value), self.get_bar_value(row_value)
 
             if key.split(" ", 1)[-1] == 'Overall score':
-                info_dict.update({key.split(" ", 1)[-1]: [value.split(" ", 1)[0], self.get_rank(), bar_value]})
+                info_dict.update({key.split(" ", 1)[-1]: (value.split(" ", 1)[0], self.get_rank(), bar_value)})
             elif key.split(" ", 1)[-1] == 'Temperature (now)':  # Temp value is saved in Celsius
-                info_dict.update({key.split(" ", 1)[-1]: [value.split(":", 1)[0].split(" ", 1)[-1],
-                                                          value.split(":", 1)[-1].split("°C", 1)[0].lstrip(), bar_value]})
+                info_dict.update({key.split(" ", 1)[-1]: (value.split(":", 1)[0].split(" ", 1)[-1],
+                                                          value.split(":", 1)[-1].split("°C", 1)[0].lstrip(), bar_value)})
             elif ': ' in value or ":" in value:
-                info_dict.update({key.split(" ", 1)[-1]: [value.split(":", 1)[0].split(" ", 1)[-1],
-                                                          value.split(":", 1)[-1].lstrip(), bar_value]})
+                info_dict.update({key.split(" ", 1)[-1]: (value.split(":", 1)[0].split(" ", 1)[-1],
+                                                          value.split(":", 1)[-1].lstrip(), bar_value)})
             else:
-                info_dict.update({key.split(" ", 1)[-1]: [value, "", bar_value]})
+                info_dict.update({key.split(" ", 1)[-1]: (value, "", bar_value)})
 
         return info_dict
 

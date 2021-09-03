@@ -35,7 +35,8 @@ The information on each city is taken from the tabs that are displayed when a ci
 
 - Coding Language: Python 3 🐍
 - Main Packages: [requests](https://docs.python-requests.org/en/master/), 
-  [bs4](https://www.crummy.com/software/BeautifulSoup/), [selenium](https://selenium-python.readthedocs.io/).
+  [bs4](https://www.crummy.com/software/BeautifulSoup/), [selenium](https://selenium-python.readthedocs.io/), 
+  [pymysql](https://pypi.org/project/PyMySQL/).
 
 ## Installation
 Before running the program it is recommended that the following installation steps are carried out:
@@ -48,7 +49,9 @@ Before running the program it is recommended that the following installation ste
    code in the Terminal (macOS/Linux) or Command Line (Windows):
    ```bash
    pip3 install -r requirements.txt
-   ```
+   ```   
+3. If the code is not loaded on and running from a server, ensure that some form of MySQL database is installed and 
+   running on your computer before running the program.
 
 ### Configurations
 
@@ -98,8 +101,35 @@ object of the CityScrapper class, which is the class that actually scrapes the i
 so by accessing the various scrapping functions in the TabScrapper class in _tab_scrapper.py_ file.
 
 The web scrapper, once it has completed scrapping all the information from [Nomad List](https://nomadlist.com/), 
+saves all the data to a mySQL database _nomad_list_.
+
+### Command Line Interface (CLI)
+
+The command line interface grants the user much greater flexibility and functionality when it comes to scrapping 
+[Nomad List](https://nomadlist.com/). There are 2 main methods for executing the scrapper in the command line:
+1. scrape
+2. filter_by
+
+#### scrap_cities
+The scrape Command Line Function (CLF) can be executed by running the following code in the CLI:
+
+```bash
+python main.py scrape_cities
+   ```
+
+The scrape_city function gives the user the capability to specify how many cities they want the scrapper to scrape.
+The user can do this in one of two ways: either by specifying how many cities they want the scrapper to scrape or by
+specifying how far they want the scrapper to scroll-down the [Nomad List](https://nomadlist.com/) homepage. 
+
+
+
+
+
+
+
+<!---The web scrapper, once it has completed scrapping all the information from [Nomad List](https://nomadlist.com/), 
 saves all the data to a JSON file called _data.json_. The _data.json_ file is saved in the same directory as 
-_main.py_. 
+_main.py_.---> 
 
 ## Project Status
 Project is: _in progress_
@@ -118,7 +148,6 @@ Some the intended functionality of this program are:
 ## Authors
 
 - David Demby ([@david613](https://github.com/david613))
-- Jonatan Kruszewski ([@jonatankruszewski](https://github.com/jonatankruszewski))
 - Kevin Szuchet ([@kevinszuchet](https://github.com/kevinszuchet))
 
 ## Support
