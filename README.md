@@ -52,22 +52,19 @@ Before running the program it is recommended that the following installation ste
    ```bash
    pip3 install -r requirements.txt
    ```   
-3. If the code is not loaded on and running from a server, ensure that some form of MySQL database is installed and 
-   running on your computer before running the program.
+3. If the code is not loaded on and running from a server, the user must ensure that some form of MySQL host is 
+   installed and running on their computer before running the program.
 
 ### Environment variables
 
-You may configure an env var to make Selenium works. Selenium, in order to run, needs the path to the chrome driver 
-in your computer. Although, you can choose which MySQL host you want to use.
+An env var can be configured in order to make Selenium work. Selenium, in order to run, needs the path to the chrome driver 
+in your computer.
 
 For Linux users:
 
 ```bash
 export NOMAD_LIST_CHROME_DRIVER_PATH = '/path/to/chrome/driver'
-export NOMAD_LIST_MYSQL_HOST = 'your_host'
-export NOMAD_LIST_MYSQL_USER = 'your_user'
-export NOMAD_LIST_MYSQL_PASSWORD = 'your_password'
-export NOMAD_LIST_MYSQL_DATABASE = 'nomad_list'
+
 ```
 or
 
@@ -84,9 +81,29 @@ brew install chromedriver
 xattr -d com.apple.quarantine /usr/local/bin/chromedriver
 ```
 
-A better option is to create a `.env` in the root of the project to avoid passing manually each variable every time you want to run the program. You only need to set the name of the variable equals the value of it.
+In order to be able to save the `nomad_list` database the user needs to input the appropriate login information
+for the specific host server that they are using. The user is free to choose which MySQL host they want to use to save 
+their `nomad_list` database. The login details of the host server can be saved by running the following code:
 
+For Linux users:
+
+```bash
+export NOMAD_LIST_MYSQL_HOST = 'your_host'
+export NOMAD_LIST_MYSQL_USER = 'your_user'
+export NOMAD_LIST_MYSQL_PASSWORD = 'your_password'
+export NOMAD_LIST_MYSQL_DATABASE = 'nomad_list'
 ```
+or
+
+```bash
+NOMAD_LIST_MYSQL_HOST='your_host' NOMAD_LIST_MYSQL_USER='your_user' NOMAD_LIST_MYSQL_PASSWORD='your_password' NOMAD_LIST_MYSQL_DATABASE='nomad_list' python3 main.py
+```
+
+A better option than running the above blocks of code is to create a `.env` in the root of the project. This will help
+to avoid having to pass each variable manually every time the Nomad List scrapper is run. The user needs to only 
+set the value of the variables once in the `.env` like so:
+
+```bash
 NOMAD_LIST_CHROME_DRIVER_PATH='/path/to/chrome/driver'
 NOMAD_LIST_MYSQL_HOST='your_host'
 NOMAD_LIST_MYSQL_USER='your_user'
@@ -96,69 +113,92 @@ NOMAD_LIST_MYSQL_DATABASE='nomad_list'
 
 ### Database Creation
 
-The database can be created by two different ways. The first one, via the command line:
+The database can be created using one of two methods. The first method to create the database is to execute the 
+following code in the MySQL Command Line:
 
-```
+```bash
 mysql -u root -p < create_schemas.sql
 ```
+which runs the `create_schema.sql` file which contains the mySQL code for creating the `nomad_list` database.
 
-The second one, using the provided [CLI]().
+The second method, is to execute the `setup-db` function provided in the command line interface [CLI](cli.py). This can 
+be done by executing the following code in the terminal/command line:
 
 ```bash
 python3 main.py setup-db
 ```
 
 ## Usage
-The program can be executed by navigating to the directory where the data-mining program has been saved by running
-the command:
+The Nomad List scrapper can be executed by navigating to the directory where the data-mining program has been saved and 
+then running the `main.py` file. 
+To navigating to the correct directory, run the following commands in the terminal (Linux/MacOS) or command line (Windows:
 
    ```bash
    cd <directory path>
    ```
 
-in the Terminal (macOS/Linux) or the Command LIne (Windows) and then running the following code:
+In the same Terminal/ Command Line window as before, after navigating to the directory where the Nomad List scrapper 
+`main.py` file is saved, the Nomad List scrapper can be run by executing the following code:
 
    ```bash
    python3 main.py
    ```
 
-It is also possible to run the following command if the main.py have execution permissions.
+If the `main.py` file has been given execution permissions this command can be executed : 
 
    ```bash
    ./main.py
    ```
 
-By running the code above, the program will display the manual of the CLI. It would be the same as if you run:
+which will display the manual of the CLI. Alternatively, if permission has not been granted, the equivalent code can be 
+run:
 
    ```bash
    python3 main.py --help
    ```
 
+As mentioned above, the web scrapper can be run by loading the _main.py_ file in a Python IDE like Pycharm or IDLE and 
+running the file there with a special configuration. It will need the corresponding arguments, `scrape [OPTIONS]`, 
+as discussed below) in order to fetch the desired cities from [Nomad List](https://nomadlist.com/), and store them in 
+the _nomad_list_ MySQL database .
+
+The code in _main.py_ will call the NomadListScrapper class in the _nomad_list_scrapper.py_ file, which is responsible for 
+handling the scrapper in the [Nomad List](https://nomadlist.com/) website. The class `NomadListScrapper` creates an 
+object of the `CityScrapper` class, which is the class that actually scrapes the information from the website, and it does
+so by accessing the various scrapping functions in the `TabScrapper` class in _tab_scrapper.py_ file.
+
+The web scrapper, once it has completed scrapping all the information from [Nomad List](https://nomadlist.com/), 
+saves all the data to a mySQL database _nomad_list_.
+
 ### Command Line Interface (CLI)
 
-The CLI allows interacting with the Nomad List Scrapper. It knows how to create the database schemas, how to scrape the cities from the stie, and how to fetch some scrapped cities from the database according to a number of filters that the user can provide.
+The command line interface grants the user much greater flexibility and functionality when it comes to using the Nomad 
+List scrapper as well as scrapping [Nomad List](https://nomadlist.com/). There are 3 main methods for executing the 
+Nomad List scrapper in the command line:
 
-  * __Database setup__: Create the necessary schemas to store the scrape data into a MySQL database.
-    ```bash
-    python3 main.py setup-db [-h] [--verbose]
+1. setup-db
+    * __Database setup__: Creates the necessary schemas to store the scrape data into a MySQL database.
+      ```bash
+      python3 main.py setup-db [-h] [--verbose]
 
-    Options:
-      -h, --help
-      -v, --verbose: Verbosity level.
-    ```
-
-  * __Scrape cities from Nomad List__: Scrap specific cities from the Nomad List site.
+      Options:
+        -h, --help
+        -v, --verbose: Verbosity level.
+      ```
+2. scrape
+    * __Scrape cities from Nomad List__: Scrap specific cities from the Nomad List website.
       ```bash
       python3 main.py scrape [-h] [--num-of-cities NUM_OF_CITIES] [--scrolls SCROLLS] [--verbose]
 
       optional arguments:
         -h, --help
         -n --num-of-cities:   Number of required cities.
-        -s --scrolls:         Number of scrolls to make in the site to fetch the cities cities.
+        -s --scrolls:         Number of scrolls to make in the site to fetch the cities.
         -v --verbose:         Verbosity level.
       ```
-
-  * __Filter the scrapped cities__: Fetch stored cities that match the filters.
+3. filter_by
+    * __Filter the scrapped cities__: Fetch cities stored in the `nomad_list` databse that match the user specofoed 
+      filters.
       ```bash
       python3 main.py filter [-h] [--num-of-cities NUM_OF_CITIES] [--country COUNTRY] [--continent CONTINENT]
                              [--rank-from RANK_FROM] [--rank-to RANK_TO]
@@ -176,50 +216,62 @@ The CLI allows interacting with the Nomad List Scrapper. It knows how to create 
         --order:              Order of sorting.
                               {ASC,DESC}
         -v, --verbose:        Verbosity level.
-    ```
-
-The web scrapper can be run by loading the _main.py_ file in a Python IDE like Pycharm or IDLE and running the file there with a special configuration. It will need the corresponding arguments (scrape [OPTIONS]) in order to fetch the cities from the site, and store them in MySQL.
-
-The code in _main.py_ will call the NomadListScrapper class in _nomad_list_scrapper.py_ file, which is responsible for 
-handling the scrapper in the [Nomad List](https://nomadlist.com/) website. The class NomadListScrapper creates an 
-object of the CityScrapper class, which is the class that actually scrapes the information from the website, and it does
-so by accessing the various scrapping functions in the TabScrapper class in _tab_scrapper.py_ file.
-
-The web scrapper, once it has completed scrapping all the information from [Nomad List](https://nomadlist.com/), 
-saves all the data to a mySQL database _nomad_list_.
-
-### Command Line Interface (CLI)
-
-The command line interface grants the user much greater flexibility and functionality when it comes to scrapping 
-[Nomad List](https://nomadlist.com/). There are 2 main methods for executing the scrapper in the command line:
-1. scrape
-2. filter_by
-
-#### scrap_cities
-The scrape Command Line Function (CLF) can be executed by running the following code in the CLI:
+      ```
+#### scrape
+The `scrape` Command Line Function (CLF) can be executed by running the following code in the CLI:
 
 ```bash
-python main.py scrape_cities
+python main.py scrape
    ```
 
-The scrape_city function gives the user the capability to specify how many cities they want the scrapper to scrape.
+The `scrape` function gives the user the capability to specify how many cities they want the scrapper to scrape.
 The user can do this in one of two ways: either by specifying how many cities they want the scrapper to scrape or by
-specifying how far they want the scrapper to scroll-down the [Nomad List](https://nomadlist.com/) homepage. 
+specifying how far they want the scrapper to scroll-down the [Nomad List](https://nomadlist.com/) homepage.
 
+For example, if the user would like to specify to the Nomad LIst Scrapper that the number of cities it must scrape is 
+10, the following code will do that:
 
+```bash
+python main.py scrape -n 10
+   ```
+or
 
+```bash
+python main.py scrape --num-of-cities 10
+   ```
 
+If on the other hand the user wants the first 5 rows of cities to be scrapped, then the following code would be run:
 
+```bash
+python main.py scrape -s 5 
+   ```
+or
 
+```bash
+python main.py scrape --scrolls 5
+   ```
 
-<!---The web scrapper, once it has completed scrapping all the information from [Nomad List](https://nomadlist.com/), 
-saves all the data to a JSON file called _data.json_. The _data.json_ file is saved in the same directory as 
-_main.py_.---> 
-saves all the data into the configured database.
+#### filter_by
+The `filter_by` Command Line Function (CLF) can be executed by running the following code in the CLI:
+
+```bash
+python main.py filter 
+   ```
+
+The `filter` function allows the user to filter through the scrapped data stored in the _nomad_list_ database in order
+to search for cities that meet specific requirements or criteria. Such requirements can be which country or continent 
+the city is situated, what the rank of the city is, or what is the Cost of living for nomad.
+
+For example, if the user wants to find which are the top 10 cities in Europe for a nomad to go to based on the overall
+rank of the city, the code to implement this query is:
+
+```bash
+python main.py filter -n 10 --continent 'Europe' --sorted-by 'rank' --order 'DESC' 
+``` 
 
 #### Autocompletion
 
-For taking advantage of the autocompletion, we installed the [`argcomplete`](https://kislyuk.github.io/argcomplete/) module.
+To take advantage of the autocomplete, the [`argcomplete`](https://kislyuk.github.io/argcomplete/) module was installed.
 
 To configure it, with all the requirements installed, it is necessary to run the following commands in the terminal:
 
@@ -231,12 +283,14 @@ activate-global-python-argcomplete --user
 sudo mv ~/.bash_completion.d/python-argcomplete /etc/.bash_completion.d
 ```
 
-It's not mandatory to move the autocompletion file to the `/etc/.bash_completion.d` directory. But, it would have to be [globally accessible](https://kislyuk.github.io/argcomplete/#activating-global-completion).
+It's not mandatory to move the autocompletion file to the `/etc/.bash_completion.d` directory but, this dependent on it being 
+[globally accessible](https://kislyuk.github.io/argcomplete/#activating-global-completion).
 
-After reset the terminal, the tab completion will be ready to be used. 
+After resetting the terminal, the autocomplete will be ready to be used. 
 
 ## Storage
-To run the scrapper using a local MySQL, follow the [MySQL Installation Guide](https://dev.mysql.com/doc/mysql-installation-excerpt/5.7/en/) to configure the localhost.
+To run the scrapper using a local MySQL, follow the [MySQL Installation Guide](https://dev.mysql.com/doc/mysql-installation-excerpt/5.7/en/) 
+instructions to configure the localhost.
 
 ## Project Status
 Project is: _in progress_
