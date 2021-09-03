@@ -1,17 +1,17 @@
 from bs4 import BeautifulSoup
 from selenium import webdriver
-import conf as CFG
+import conf as cfg
 import time
 
 
-# TODO Context Manager
-
 class WebDriver:
+    # TODO: Context Manager (Nice to have)
+
     def __init__(self, logger, base_url):
         self._base_url = base_url
         self._logger = logger
         self._logger.info('Initializing the web_driver')
-        self._driver = webdriver.Chrome(CFG.CHROME_DRIVER_PATH) if CFG.CHROME_DRIVER_PATH else webdriver.Chrome()
+        self._driver = webdriver.Chrome(cfg.CHROME_DRIVER_PATH) if cfg.CHROME_DRIVER_PATH else webdriver.Chrome()
 
     def _get_scroll_height(self):
         """Takes the scroll height of the document executing javascript in the browser."""
@@ -46,7 +46,7 @@ class WebDriver:
             self._logger.info(f"Scroll height: {last_height}")
 
             # Wait to load page
-            time.sleep(CFG.NOMAD_LIST_SCROLL_PAUSE_TIME)
+            time.sleep(cfg.NOMAD_LIST_SCROLL_PAUSE_TIME)
 
             # Calculate new scroll height and compare with last scroll height
             new_height = self._get_scroll_height()
