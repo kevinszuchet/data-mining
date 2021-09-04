@@ -291,7 +291,9 @@ It's not mandatory to move the autocompletion file to the `/etc/.bash_completion
 After resetting the terminal, the autocomplete will be ready to be used.
 
 ## Storage
-[Nomad List ERD](https://lucid.app/lucidchart/3ca812c4-bcc8-4227-b7db-d8966d1fcb74/view?page=.C-3zxKe0gpQ#)
+
+### ERD
+[![Nomad List ERD](https://user-images.githubusercontent.com/31735779/132088145-5d919119-d155-42f0-ad35-6bf573c8221b.jpeg)](https://lucid.app/lucidchart/3ca812c4-bcc8-4227-b7db-d8966d1fcb74/view?page=.C-3zxKe0gpQ#)
 
 ## Project Status
 Project is: _in progress_
