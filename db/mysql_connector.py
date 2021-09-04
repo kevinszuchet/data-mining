@@ -173,12 +173,10 @@ class MySQLConnector:
 
         insert_city_attributes_query = """
         INSERT INTO city_attributes
-        (id_city, id_attribute, description)
-        -- value, url 
-        VALUES (%s, %s, %s) as new
+        (id_city, id_attribute, description, attribute_value, url)
+        VALUES (%s, %s, %s, %s, %s) as new
             ON DUPLICATE KEY UPDATE 
-                description = new.description 
-                -- value = new.value, url = new.url
+                description = new.description, attribute_value = new.attribute_value, url = new.url 
         """
 
         attributes = self._upsert_tab_and_attributes(tab_name, tab_info)
@@ -186,8 +184,8 @@ class MySQLConnector:
         with self._connection.cursor() as cursor:
             # Inserting {tab_name} ATTRIBUTE VALUES into city_attributes table
             self._logger.info(f"Inserting the value of the attributes for the tab {tab_name}...")
-            values = [(id_city, id_attribute, tab_info.get(attribute))
-                      for id_attribute, attribute in attributes if tab_info.get(attribute)]
+            values = [(id_city, id_attribute, info[0], info[1], info[2] if len(info) > 2 else None)
+                      for id_attribute, attribute in attributes if (info := tab_info.get(attribute))]
             self._logger.debug(f"Query: {insert_city_attributes_query} - Values: {values}")
             cursor.executemany(insert_city_attributes_query, values)
             self._connection.commit()
@@ -202,12 +200,10 @@ class MySQLConnector:
 
         insert_monthly_weathers_attributes_query = """
         INSERT INTO monthly_weathers_attributes
-        (id_city, id_attribute, month, value)
-        -- description
-        VALUES (%s, %s, %s, %s) as new
+        (id_city, id_attribute, month_number, attribute_value, description)
+        VALUES (%s, %s, %s, %s, %s) as new
             ON DUPLICATE KEY UPDATE 
-                value = new.value
-                -- description = new.description
+                attribute_value = new.attribute_value, description = new.description
         """
 
         tab_name = 'Weather'
@@ -218,9 +214,9 @@ class MySQLConnector:
         with self._connection.cursor() as cursor:
             # Inserting ATTRIBUTE VALUES into monthly_weathers_attributes table
             self._logger.info(f"Inserting the value of the attributes for the tab Weather...")
-            values = [(id_city, id_attribute, i + 1, value)
+            values = [(id_city, id_attribute, i + 1, value, description)
                       for id_attribute, attribute in attributes
-                      for i, [__, value] in enumerate(tab_info.get(attribute, []))]
+                      for i, (__, value, description) in enumerate(tab_info.get(attribute, []))]
             self._logger.debug(f"Query: {insert_monthly_weathers_attributes_query} - Values: {values}")
             cursor.executemany(insert_monthly_weathers_attributes_query, values)
             self._connection.commit()
@@ -335,10 +331,10 @@ class MySQLConnector:
             'name': 'city.name',
             'country': 'country.name',
             'continent': 'continent.name',
-            'cost': 'SUM(case when attribute.name LIKE \'%Cost\' THEN city_attribute.value END)',
-            'internet': 'SUM(case when attribute.name LIKE \'%Internet\' THEN city_attribute.value END)',
-            'fun': 'SUM(case when attribute.name LIKE \'%Fun\' THEN city_attribute.value END)',
-            'safety': 'SUM(case when attribute.name LIKE \'%Safety\' THEN city_attribute.value END)'
+            'cost': 'SUM(case when attribute.name LIKE \'%Cost\' THEN city_attribute.attribute_value END)',
+            'internet': 'SUM(case when attribute.name LIKE \'%Internet\' THEN city_attribute.attribute_value END)',
+            'fun': 'SUM(case when attribute.name LIKE \'%Fun\' THEN city_attribute.attribute_value END)',
+            'safety': 'SUM(case when attribute.name LIKE \'%Safety\' THEN city_attribute.attribute_value END)'
         }
 
         order_by_clause = f"""
