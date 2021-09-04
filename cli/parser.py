@@ -3,7 +3,7 @@ from db.mysql_connector import MySQLConnector
 from scrapper.nomad_list_scrapper import NomadListScrapper
 
 OPTIONAL_KWARGS = ['type', 'action', 'choices', 'default']
-VERBOSE_PARAM = {'name': 'verbose,v', 'positional': False, 'action': 'store_true', 'help': 'Verbosity level.'}
+VERBOSE_PARAM = {'name': 'verbose,v', 'positional': False, 'action': 'store_true', 'help': 'Enable verbosity.'}
 
 
 class Parser:
@@ -120,7 +120,7 @@ class FilterParser(Parser):
                 'name': 'sorted-by',
                 'positional': False,
                 'type': str,
-                'help': 'Sorting criteria.',
+                'help': 'Sorting criteria. Default: rank.',
                 'choices': ['rank', 'name', 'country', 'continent', 'cost', 'internet', 'fun', 'safety'],
                 'default': 'rank'
             },
@@ -128,7 +128,7 @@ class FilterParser(Parser):
                 'name': 'order',
                 'positional': False,
                 'type': str,
-                'help': 'Order of sorting.',
+                'help': 'Order of sorting. Default: ASC.',
                 'choices': ['ASC', 'DESC'],
                 'default': 'ASC'
             }

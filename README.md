@@ -187,7 +187,7 @@ Nomad List scrapper in the command line:
 
       Options:
         -h, --help
-        -v, --verbose: Verbosity level.
+        -v, --verbose: Enable verbosity.
       ```
 2. __Scrape cities from Nomad List__: Scrap specific cities from the Nomad List website.
       ```bash
@@ -197,7 +197,7 @@ Nomad List scrapper in the command line:
         -h, --help
         -n --num-of-cities:   Number of required cities.
         -s --scrolls:         Number of scrolls to make in the site to fetch the cities.
-        -v --verbose:         Verbosity level.
+        -v --verbose:         Enable verbosity.
       ```
 3. __Filter the scrapped cities__: Fetch cities stored in the `nomad_list` database that match the user specified 
       filters.
@@ -213,11 +213,11 @@ Nomad List scrapper in the command line:
         --continent:          Name of the continent.
         --rank-from:          From rank <rank-from>.
         --rank-to:            To rank <rank-to>.
-        --sorted-by:          Sorting criteria.
+        --sorted-by:          Sorting criteria. Default: rank.
                               {rank,name,country,continent,cost,internet,fun,safety}
-        --order:              Order of sorting.
+        --order:              Order of sorting. Default: ASC.
                               {ASC,DESC}
-        -v, --verbose:        Verbosity level.
+        -v, --verbose:        Enable verbosity.
       ```
 #### scrape
 The `scrape` Command Line Function (CLF) can be executed by running the following code in the CLI:
