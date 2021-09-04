@@ -81,9 +81,10 @@ class MySQLConnector:
 
         columns = ', '.join(values_dict.keys())
 
-        filters = [self._to_sql_comparison(key, value) for key, value in values_dict.items() if
-                   domain_identifier is None or key == domain_identifier or key in domain_identifier]
-        where_clause = ' AND'.join(filters)
+        filters = [(key, value) for key, value in values_dict.items()
+                             if domain_identifier is None or key == domain_identifier or key in domain_identifier]
+
+        where_clause = ' AND'.join([f"{key} = %s" for key, value in filters])
         select_query = f"SELECT id, {columns} FROM {table} WHERE {where_clause};"
 
         values_tuple = tuple(values_dict.values())
@@ -96,8 +97,9 @@ class MySQLConnector:
 
         with self._connection.cursor() as cursor:
             self._logger.info(f"Selecting the id of one of the {table}...")
-            self._logger.debug(select_query)
-            cursor.execute(select_query)
+            select_query_values = tuple(value for __, value in filters)
+            self._logger.debug(f"Query: {select_query} - Values: {select_query_values}")
+            cursor.execute(select_query, select_query_values)
             result = cursor.fetchone()
             self._logger.debug(f"Result of the query: {result}")
 
@@ -108,13 +110,13 @@ class MySQLConnector:
                 if any(differences):
                     update_query = f"""
                     UPDATE IGNORE {table}
-                    SET {', '.join([self._to_sql_comparison(key, value) for key, value in values_dict.items()])}
+                    SET {', '.join([f"{key} = %s" for key in values_dict.keys()])}
                     WHERE id = {row_id}
                     """
 
                     self._logger.info(f"There are differences between the old and the new row. About to update it...")
-                    self._logger.debug(f"Query: {update_query}")
-                    cursor.execute(update_query)
+                    self._logger.debug(f"Query: {update_query} - Values: {values_tuple}")
+                    cursor.execute(update_query, values_tuple)
                     self._connection.commit()
 
                 return row_id
@@ -253,7 +255,7 @@ class MySQLConnector:
         """
 
         types = ['Near', 'Next', 'Similar']
-        cities = list(set(reduce(lambda cities_names, key: cities_names + details.get(key), types, [])))
+        cities = list(set(reduce(lambda cities_names, key: cities_names + details.get(key, []), types, [])))
 
         insert_cities_query = "INSERT IGNORE INTO cities (name) VALUES (%s)"
         select_cities_query = f"SELECT id, name FROM cities WHERE name IN ({', '.join(['%s'] * len(cities))})"
