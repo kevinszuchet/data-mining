@@ -60,8 +60,6 @@ class SetupSchemasParser(Parser):
 class ScrapeParser(Parser):
     """Parser that knows how to scrape the cities using the NomadListScrapper."""
 
-    # TODO: Force option to drop all the schemas and create them again. (Nice to have)
-
     def __init__(self):
         params = [
             {
