@@ -140,6 +140,6 @@ class FilterParser(Parser):
     def parse(self, *args, **kwargs):
         with MySQLConnector(verbose=kwargs.get('verbose')) as mysql_connector:
             results = mysql_connector.filter_cities_by(*args, **kwargs)
-            headers = ['Rank', 'City', 'Country', 'Continent', 'Cost', 'Internet', 'Fun', 'Safety']
+            headers = ['Rank', 'City', 'Country', 'Continent', '💵 Cost', '📡 Internet', '😀 Fun', '👮 Safety']
 
-            print(tabulate(results, headers=headers), end='\n\n')
+            print('\n\n' + tabulate(results, headers=headers), end='\n\n')
