@@ -2,6 +2,9 @@ import sys
 import argparse, argcomplete
 from logger import Logger
 from cli.parser import SetupSchemasParser, ScrapeParser, FilterParser
+from pymysql.err import OperationalError
+
+UNKNOWN_DATABASE = 1049
 
 
 class CommandLineInterface:
@@ -31,14 +34,27 @@ class CommandLineInterface:
         command = inputs['command']
         inputs.pop('command')
 
+        verbose = inputs.get('verbose')
+        logger = Logger(verbose=verbose).logger
+
+
         if not command:
             self._parser.print_help()
             sys.exit(0)
 
         try:
             self._parsers[command].parse(**inputs)
+        except OperationalError as e:
+            code, message = e.args
+
+            if code == UNKNOWN_DATABASE:
+                logger.error(f"You should run the setup-db command before start scraping the cities.", exc_info=verbose)
+                sys.exit(1)
+
+            logger.error(f"MySQL Operational Exception raised: {e}", exc_info=verbose)
+            sys.exit(1)
         except Exception as e:
-            Logger(verbose=inputs.get('verbose')).logger.error(f"Exception raised: {e}", exc_info=inputs.get('verbose'))
+            logger.error(f"Exception raised: {e}", exc_info=verbose)
             sys.exit(1)
 
 
