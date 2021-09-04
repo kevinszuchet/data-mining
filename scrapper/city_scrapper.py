@@ -65,7 +65,9 @@ class CityScrapper:
 
             city = text.h1.text if text.h1 else "-"
             country = text.h2.text if text.h2 else "-"
-            rank = rank or int(ScoresTabScrapper(city_details_soup).get_rank())
+            # TODO we have problems with the data-i of the cities. It should be the rank but,
+            #  after 26 cities, it always brings the same value (data-i="26")
+            rank = int(ScoresTabScrapper(city_details_soup).get_rank())
 
             self._logger.info(f'Fetching the info of {city}, {country} with rank #{rank}')
 

@@ -81,9 +81,10 @@ class MySQLConnector:
 
         columns = ', '.join(values_dict.keys())
 
-        filters = [self._to_sql_comparison(key, value) for key, value in values_dict.items() if
-                   domain_identifier is None or key == domain_identifier or key in domain_identifier]
-        where_clause = ' AND'.join(filters)
+        filters = [(key, value) for key, value in values_dict.items()
+                             if domain_identifier is None or key == domain_identifier or key in domain_identifier]
+
+        where_clause = ' AND'.join([f"{key} = %s" for key, value in filters])
         select_query = f"SELECT id, {columns} FROM {table} WHERE {where_clause};"
 
         values_tuple = tuple(values_dict.values())
@@ -96,8 +97,9 @@ class MySQLConnector:
 
         with self._connection.cursor() as cursor:
             self._logger.info(f"Selecting the id of one of the {table}...")
-            self._logger.debug(select_query)
-            cursor.execute(select_query)
+            select_query_values = tuple(value for __, value in filters)
+            self._logger.debug(f"Query: {select_query} - Values: {select_query_values}")
+            cursor.execute(select_query, select_query_values)
             result = cursor.fetchone()
             self._logger.debug(f"Result of the query: {result}")
 
@@ -108,13 +110,13 @@ class MySQLConnector:
                 if any(differences):
                     update_query = f"""
                     UPDATE IGNORE {table}
-                    SET {', '.join([self._to_sql_comparison(key, value) for key, value in values_dict.items()])}
+                    SET {', '.join([f"{key} = %s" for key in values_dict.keys()])}
                     WHERE id = {row_id}
                     """
 
                     self._logger.info(f"There are differences between the old and the new row. About to update it...")
-                    self._logger.debug(f"Query: {update_query}")
-                    cursor.execute(update_query)
+                    self._logger.debug(f"Query: {update_query} - Values: {values_tuple}")
+                    cursor.execute(update_query, values_tuple)
                     self._connection.commit()
 
                 return row_id
@@ -173,12 +175,10 @@ class MySQLConnector:
 
         insert_city_attributes_query = """
         INSERT INTO city_attributes
-        (id_city, id_attribute, description)
-        -- value, url 
-        VALUES (%s, %s, %s) as new
+        (id_city, id_attribute, description, attribute_value, url)
+        VALUES (%s, %s, %s, %s, %s) as new
             ON DUPLICATE KEY UPDATE 
-                description = new.description 
-                -- value = new.value, url = new.url
+                description = new.description, attribute_value = new.attribute_value, url = new.url 
         """
 
         attributes = self._upsert_tab_and_attributes(tab_name, tab_info)
@@ -186,8 +186,8 @@ class MySQLConnector:
         with self._connection.cursor() as cursor:
             # Inserting {tab_name} ATTRIBUTE VALUES into city_attributes table
             self._logger.info(f"Inserting the value of the attributes for the tab {tab_name}...")
-            values = [(id_city, id_attribute, tab_info.get(attribute))
-                      for id_attribute, attribute in attributes if tab_info.get(attribute)]
+            values = [(id_city, id_attribute, info[0], info[1], info[2] if len(info) > 2 else None)
+                      for id_attribute, attribute in attributes if (info := tab_info.get(attribute))]
             self._logger.debug(f"Query: {insert_city_attributes_query} - Values: {values}")
             cursor.executemany(insert_city_attributes_query, values)
             self._connection.commit()
@@ -202,12 +202,10 @@ class MySQLConnector:
 
         insert_monthly_weathers_attributes_query = """
         INSERT INTO monthly_weathers_attributes
-        (id_city, id_attribute, month, value)
-        -- description
-        VALUES (%s, %s, %s, %s) as new
+        (id_city, id_attribute, month_number, attribute_value, description)
+        VALUES (%s, %s, %s, %s, %s) as new
             ON DUPLICATE KEY UPDATE 
-                value = new.value
-                -- description = new.description
+                attribute_value = new.attribute_value, description = new.description
         """
 
         tab_name = 'Weather'
@@ -218,9 +216,9 @@ class MySQLConnector:
         with self._connection.cursor() as cursor:
             # Inserting ATTRIBUTE VALUES into monthly_weathers_attributes table
             self._logger.info(f"Inserting the value of the attributes for the tab Weather...")
-            values = [(id_city, id_attribute, i + 1, value)
+            values = [(id_city, id_attribute, i + 1, value, description)
                       for id_attribute, attribute in attributes
-                      for i, [__, value] in enumerate(tab_info.get(attribute, []))]
+                      for i, (__, value, description) in enumerate(tab_info.get(attribute, []))]
             self._logger.debug(f"Query: {insert_monthly_weathers_attributes_query} - Values: {values}")
             cursor.executemany(insert_monthly_weathers_attributes_query, values)
             self._connection.commit()
@@ -257,7 +255,7 @@ class MySQLConnector:
         """
 
         types = ['Near', 'Next', 'Similar']
-        cities = list(set(reduce(lambda cities_names, key: cities_names + details.get(key), types, [])))
+        cities = list(set(reduce(lambda cities_names, key: cities_names + details.get(key, []), types, [])))
 
         insert_cities_query = "INSERT IGNORE INTO cities (name) VALUES (%s)"
         select_cities_query = f"SELECT id, name FROM cities WHERE name IN ({', '.join(['%s'] * len(cities))})"
@@ -335,10 +333,10 @@ class MySQLConnector:
             'name': 'city.name',
             'country': 'country.name',
             'continent': 'continent.name',
-            'cost': 'SUM(case when attribute.name LIKE \'%Cost\' THEN city_attribute.value END)',
-            'internet': 'SUM(case when attribute.name LIKE \'%Internet\' THEN city_attribute.value END)',
-            'fun': 'SUM(case when attribute.name LIKE \'%Fun\' THEN city_attribute.value END)',
-            'safety': 'SUM(case when attribute.name LIKE \'%Safety\' THEN city_attribute.value END)'
+            'cost': 'SUM(case when attribute.name LIKE \'%Cost\' THEN city_attribute.attribute_value END)',
+            'internet': 'SUM(case when attribute.name LIKE \'%Internet\' THEN city_attribute.attribute_value END)',
+            'fun': 'SUM(case when attribute.name LIKE \'%Fun\' THEN city_attribute.attribute_value END)',
+            'safety': 'SUM(case when attribute.name LIKE \'%Safety\' THEN city_attribute.attribute_value END)'
         }
 
         order_by_clause = f"""

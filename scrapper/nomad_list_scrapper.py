@@ -9,8 +9,7 @@ import sys
 from logger import Logger
 from scrapper.web_driver import WebDriver
 
-SHOULD_USE_THE_HTML_FILE = os.path.exists(cfg.PAGE_SOURCE) and os.getenv(
-    'ENV') != "production" and cfg.LOAD_HTML_FROM_DISK
+SHOULD_USE_THE_HTML_FILE = os.getenv('ENV') != "production" and cfg.LOAD_HTML_FROM_DISK
 
 
 class NomadListScrapper:
@@ -32,13 +31,9 @@ class NomadListScrapper:
 
     def _load_html_from_disk(self):
         """Attempts to load the html locally"""
-        try:
-            with open(cfg.PAGE_SOURCE, 'r') as opened_file:
-                page_source = opened_file.read()
-            return page_source
-        except Exception as e:
-            self._logger.error(f'There was an error loading the html file on path : {cfg.PAGE_SOURCE}. Error: {e}')
-            sys.exit(1)
+        with open(cfg.PAGE_SOURCE, 'r') as opened_file:
+            page_source = opened_file.read()
+        return page_source
 
     def _write_html_to_disk(self, page_source):
         try:
@@ -51,13 +46,18 @@ class NomadListScrapper:
     def _get_html(self, **kwargs):
         """Gets the Main HTML file which contents will be scrapped"""
         self._logger.info('Retrieving base Html file')
-        if SHOULD_USE_THE_HTML_FILE:
-            page_source = self._load_html_from_disk()
+        if SHOULD_USE_THE_HTML_FILE and os.path.exists(cfg.PAGE_SOURCE):
+            try:
+                page_source = self._load_html_from_disk()
+            except Exception as e:
+                self._logger.error(f'There was an error loading the html file on path : {cfg.PAGE_SOURCE}. Error: {e}')
+                page_source = self._driver.get_page_source(**kwargs)
         else:
             page_source = self._driver.get_page_source(**kwargs)
-            if SHOULD_USE_THE_HTML_FILE:
-                self._write_html_to_disk(page_source)
-                self._logger.info('New Html written to disk')
+
+        if SHOULD_USE_THE_HTML_FILE:
+            self._write_html_to_disk(page_source)
+            self._logger.info('New Html written to disk')
 
         self._driver.close()
         return page_source
@@ -73,7 +73,7 @@ class NomadListScrapper:
             self._logger.debug(f"Created Beautiful soup object from the HTML file")
             cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
             self._logger.debug(f"Cities achieved")
-            return cities_lis if num_of_cities is None else cities_lis[:num_of_cities]
+            return cities_lis if num_of_cities is None else cities_lis[:(num_of_cities + 1)]
         except(AttributeError, KeyError) as e:
             self._logger.error(f"Error trying to fetch the cities in the page source: {e}")
             sys.exit(1)

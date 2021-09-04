@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS city_attributes (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   id_city INT,
   id_attribute INT,
-  value DOUBLE,
+  attribute_value DOUBLE,
   description VARCHAR(255),
   url VARCHAR(255),
   created_on DATETIME NOT NULL DEFAULT NOW(),
@@ -86,14 +86,14 @@ CREATE TABLE IF NOT EXISTS monthly_weathers_attributes (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   id_city INT,
   id_attribute INT,
-  month INT,
-  value VARCHAR(255),
+  month_number INT,
+  attribute_value VARCHAR(255),
   description VARCHAR(255),
   created_on DATETIME NOT NULL DEFAULT NOW(),
   updated_on DATETIME DEFAULT NULL ON UPDATE NOW(),
   FOREIGN KEY (id_city) REFERENCES cities(id),
   FOREIGN KEY (id_attribute) REFERENCES attributes(id),
-  UNIQUE (id_city, id_attribute, month)
+  UNIQUE (id_city, id_attribute, month_number)
 );
 
 CREATE TABLE IF NOT EXISTS reviews (

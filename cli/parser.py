@@ -3,7 +3,7 @@ from db.mysql_connector import MySQLConnector
 from scrapper.nomad_list_scrapper import NomadListScrapper
 
 OPTIONAL_KWARGS = ['type', 'action', 'choices', 'default']
-VERBOSE_PARAM = {'name': 'verbose,v', 'positional': False, 'action': 'store_true', 'help': 'Verbosity level.'}
+VERBOSE_PARAM = {'name': 'verbose,v', 'positional': False, 'action': 'store_true', 'help': 'Enable verbosity.'}
 
 
 class Parser:
@@ -59,8 +59,6 @@ class SetupSchemasParser(Parser):
 
 class ScrapeParser(Parser):
     """Parser that knows how to scrape the cities using the NomadListScrapper."""
-
-    # TODO: Force option to drop all the schemas and create them again. (Nice to have)
 
     def __init__(self):
         params = [
@@ -122,7 +120,7 @@ class FilterParser(Parser):
                 'name': 'sorted-by',
                 'positional': False,
                 'type': str,
-                'help': 'Sorting criteria.',
+                'help': 'Sorting criteria. Default: rank.',
                 'choices': ['rank', 'name', 'country', 'continent', 'cost', 'internet', 'fun', 'safety'],
                 'default': 'rank'
             },
@@ -130,7 +128,7 @@ class FilterParser(Parser):
                 'name': 'order',
                 'positional': False,
                 'type': str,
-                'help': 'Order of sorting.',
+                'help': 'Order of sorting. Default: ASC.',
                 'choices': ['ASC', 'DESC'],
                 'default': 'ASC'
             }
@@ -142,4 +140,4 @@ class FilterParser(Parser):
             results = mysql_connector.filter_cities_by(*args, **kwargs)
             headers = ['Rank', 'City', 'Country', 'Continent', '💵 Cost', '📡 Internet', '😀 Fun', '👮 Safety']
 
-            print(tabulate(results, headers=headers), end='\n\n')
+            print('\n\n' + tabulate(results, headers=headers), end='\n\n')
