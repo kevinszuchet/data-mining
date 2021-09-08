@@ -328,10 +328,11 @@ class MySQLConnector:
             'name': 'city.name',
             'country': 'country.name',
             'continent': 'continent.name',
-            'cost': 'SUM(case when attribute.name LIKE \'%Cost\' THEN city_attribute.attribute_value END)',
-            'internet': 'SUM(case when attribute.name LIKE \'%Internet\' THEN city_attribute.attribute_value END)',
+            'overall score': 'SUM(case when attribute.name LIKE \'%Overall Score\' THEN city_attribute.attribute_value END)',
+            'cost': 'GROUP_CONCAT(case when attribute.name LIKE \'%Cost\' THEN city_attribute.description END)',
+            'internet': 'GROUP_CONCAT(case when attribute.name LIKE \'%Internet\' THEN city_attribute.description END)',
             'fun': 'SUM(case when attribute.name LIKE \'%Fun\' THEN city_attribute.attribute_value END)',
-            'safety': 'SUM(case when attribute.name LIKE \'%Safety\' THEN city_attribute.attribute_value END)'
+            'safety': 'GROUP_CONCAT(case when attribute.name LIKE \'%Safety\' THEN city_attribute.description END)'
         }
 
         order_by_clause = f"""
