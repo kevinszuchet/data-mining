@@ -60,11 +60,6 @@ class MySQLConnector:
 
             logger.info("Script successfully executed!")
 
-    def _to_sql_comparison(self, column, value):
-        """Given a column name and a value, builds the SQL equal comparison statement. Then, returns it."""
-        value = value if isinstance(value, int) or isinstance(value, float) else f"'{value}'"
-        return f"{column} = {value}"
-
     def _upsert_and_get_id(self, table, values_dict, domain_identifier=None):
         """
             Upsert a row in a table, and returns the id of it.
