@@ -1,8 +1,9 @@
 import pymysql
+import re
 from functools import reduce
 from conf import MYSQL
 from logger import Logger
-import re
+from datetime import datetime
 
 
 # TODO: we could avoid all the selections and inserts statements with the tabs and attributes...
@@ -240,6 +241,18 @@ class MySQLConnector:
             cursor.executemany(insert_query, values)
             self._connection.commit()
 
+    def _upsert_reviews(self, id_city, details):
+        select_last_published_date = f"SELECT MAX(published_date) FROM reviews WHERE id_city = {id_city}"
+        with self._connection.cursor() as cursor:
+            self._logger.info(f"Selecting the last published date of the reviews of the city {id_city}...")
+            cursor.execute(select_last_published_date)
+            (last_date,) = cursor.fetchone()
+
+        reviews = [(desc, published_date) for (desc, published_date) in details.get('Reviews', [])
+                   if not last_date or datetime.strptime(published_date, '%Y-%m-%d').date() > last_date]
+
+        self._upsert_many('reviews', id_city, ['description', 'published_date'], reviews)
+
     def _insert_relationships(self, id_city, details):
         """
         Given the id of the current city and the details of it, insert the relationships between this city and the near,
@@ -305,7 +318,7 @@ class MySQLConnector:
         self._upsert_many('pros_and_cons', id_city, ['description', 'type'], pros + cons)
 
         # TODO insert only new data (using review date)
-        self._upsert_many('reviews', id_city, ['description'], details.get('Reviews', []))
+        self._upsert_reviews(id_city, details)
 
         self._upsert_weather(id_city, details)
 
