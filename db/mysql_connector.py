@@ -12,6 +12,8 @@ from datetime import datetime
 class MySQLConnector:
     """Class that knows how to handle the connection with MySQL."""
 
+    tabs_cache = dict()
+
     def __init__(self, logger=None, verbose=False):
         if logger is None:
             logger = Logger(verbose=verbose).logger
@@ -139,14 +141,19 @@ class MySQLConnector:
         insert_attributes_query = "INSERT IGNORE INTO attributes (name, id_tab) VALUES (%s, %s)"
 
         with self._connection.cursor() as cursor:
-            # TODO: insert only once all the tabs names.
-            self._logger.debug(f"Trying to insert a new tab {tab_name}")
-            cursor.execute(insert_tabs_query, tab_name)
-            self._connection.commit()
+            if tab_name not in self.tabs_cache:
+                self._logger.debug(f"Trying to insert a new tab {tab_name}")
+                cursor.execute(insert_tabs_query, tab_name)
+                self._connection.commit()
 
-            # Selecting the id of the tab name {tab_name}
-            cursor.execute(f"SELECT id FROM tabs WHERE name = '{tab_name}';")
-            id_tab, = cursor.fetchone()
+                # Selecting the id of the tab name {tab_name}
+                cursor.execute(f"SELECT id FROM tabs WHERE name = '{tab_name}';")
+                id_tab, = cursor.fetchone()
+
+                self.tabs_cache.update({tab_name: id_tab})
+            else:
+                self._logger.debug(f"The tab {tab_name} was created before, taking the id from the cache...")
+                id_tab = self.tabs_cache.get(tab_name)
 
             # Inserting ATTRIBUTE NAMES into attributes table
             self._logger.info(f"Inserting attributes for the tab {tab_name}...")
