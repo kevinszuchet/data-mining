@@ -119,9 +119,9 @@ class FilterParser(Parser):
             {
                 'name': 'sorted-by',
                 'positional': False,
-                'type': str,
+                'type': str.lower,
                 'help': 'Sorting criteria. Default: rank.',
-                'choices': ['rank', 'name', 'country', 'continent', 'cost', 'internet', 'fun', 'safety'],
+                'choices': ['rank', 'name', 'country', 'continent', 'overall score', 'cost', 'internet', 'fun', 'safety'],
                 'default': 'rank'
             },
             {
