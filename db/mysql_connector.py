@@ -12,6 +12,8 @@ from datetime import datetime
 class MySQLConnector:
     """Class that knows how to handle the connection with MySQL."""
 
+    continents_cache = dict()
+    countries_cache = dict()
     tabs_cache = dict()
 
     def __init__(self, logger=None, verbose=False):
@@ -62,6 +64,40 @@ class MySQLConnector:
                     connection.commit()
 
             logger.info("Script successfully executed!")
+
+    def _upsert_continent_and_get_id(self, details):
+        """
+        Given the details of the city, takes the name of the continent and tries to take the id using the cache.
+        If the continent hasn't been added yet, it will be created first in the DB and then added to the dict.
+        It returns the id of the continent.
+        """
+        continent = details.get('continent')
+
+        if continent in self.continents_cache:
+            self._logger.debug(f"The continent {continent} was created before, taking the id from the cache...")
+            return self.continents_cache.get(continent)
+
+        values_dict = {'name': details.get('continent')}
+        id_continent = self._upsert_and_get_id("continents", values_dict, domain_identifier='name')
+        self.continents_cache.update({continent: id_continent})
+        return id_continent
+
+    def _upsert_country_and_get_id(self, id_continent, details):
+        """
+        Given the id of the continent, details of the city, takes the name of the country and tries to take the id
+        from the cache. If it hasn't been added yet, it will be created first in the DB and then added to the dict.
+        It returns the id of the country.
+        """
+        country = details.get('country')
+
+        if country in self.countries_cache:
+            self._logger.debug(f"The country {country} was created before, taking the id from the cache...")
+            return self.countries_cache.get(country)
+
+        values_dict = {'name': country, 'id_continent': id_continent}
+        id_country = self._upsert_and_get_id("countries", values_dict, domain_identifier='name')
+        self.countries_cache.update({country: id_country})
+        return id_country
 
     def _upsert_and_get_id(self, table, values_dict, domain_identifier=None):
         """
@@ -303,11 +339,9 @@ class MySQLConnector:
     def insert_city_info(self, details):
         """Given the details of the city, insert all the necessary rows to store it in the database."""
 
-        id_continent = self._upsert_and_get_id("continents", {'name': details.get('continent')},
-                                               domain_identifier='name')
-
-        country = {'name': details.get('country'), 'id_continent': id_continent}
-        id_country = self._upsert_and_get_id("countries", country, domain_identifier='name')
+        # TODO avoid duplicating the logic between all the cache instances
+        id_continent = self._upsert_continent_and_get_id(details)
+        id_country = self._upsert_country_and_get_id(id_continent, details)
 
         city = {'name': details.get('city'), 'city_rank': details.get('rank'), 'id_country': id_country}
         id_city = self._upsert_and_get_id("cities", city, domain_identifier='name')
