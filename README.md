@@ -214,7 +214,7 @@ Nomad List scrapper in the command line:
         --rank-from:          From rank <rank-from>.
         --rank-to:            To rank <rank-to>.
         --sorted-by:          Sorting criteria. Default: rank.
-                              {rank,name,country,continent,cost,internet,fun,safety}
+                              {rank,name,country,continent,overall score,cost,internet,fun,safety}
         --order:              Order of sorting. Default: ASC.
                               {ASC,DESC}
         -v, --verbose:        Enable verbosity.
