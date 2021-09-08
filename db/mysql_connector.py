@@ -77,7 +77,7 @@ class MySQLConnector:
         columns = ', '.join(values_dict.keys())
 
         filters = [(key, value) for key, value in values_dict.items()
-                             if domain_identifier is None or key == domain_identifier or key in domain_identifier]
+                   if domain_identifier is None or key == domain_identifier or key in domain_identifier]
 
         where_clause = ' AND'.join([f"{key} = %s" for key, value in filters])
         select_query = f"SELECT id, {columns} FROM {table} WHERE {where_clause};"
@@ -338,19 +338,23 @@ class MySQLConnector:
         ORDER BY {sorting_dict.get(sorted_by, 'city.city_rank')} {order}
         """
 
+        main_scores = ['Overall Score', 'Cost', 'Internet', 'Fun', 'Safety']
+
+        main_scores_columns = [
+            f"GROUP_CONCAT(case when attribute.name LIKE '%{name}' THEN city_attribute.description END) '{name}'"
+            for name in main_scores]
+
+        main_scores_filters = [f'attribute.name LIKE "%{name}"' for name in main_scores]
+
         query = f"""
             SELECT city.city_rank, city.name, country.name, continent.name,
-                GROUP_CONCAT(case when attribute.name LIKE '%Cost' THEN city_attribute.description END) Cost,
-                GROUP_CONCAT(case when attribute.name LIKE '%Internet' THEN city_attribute.description END) Internet,
-                GROUP_CONCAT(case when attribute.name LIKE '%Fun' THEN city_attribute.description END) Fun,
-                GROUP_CONCAT(case when attribute.name LIKE '%Safety' THEN city_attribute.description END) Safety  
+                {','.join(main_scores_columns)}  
             FROM cities city
             JOIN countries country ON city.id_country = country.id
             JOIN continents continent ON country.id_continent = continent.id
             JOIN city_attributes city_attribute ON city.id = city_attribute.id_city
             JOIN attributes attribute ON city_attribute.id_attribute = attribute.id
-                AND (attribute.name LIKE "%Cost" OR attribute.name LIKE '%Internet' OR attribute.name LIKE '%Fun' 
-                    OR attribute.name LIKE '%Safety')
+                AND ({'OR '.join(main_scores_filters)})
             JOIN tabs tab ON attribute.id_tab = tab.id AND tab.name = 'Scores'
             {where_clause.strip().rstrip(' AND ')}
             GROUP BY city.city_rank, city.name, country.name, continent.name
