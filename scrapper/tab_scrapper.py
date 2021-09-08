@@ -132,6 +132,7 @@ class CostOfLivingTabScrapper(KeyValueTabScrapper):
         self._tab = self._tab_scroller.find("div", class_="tab editable tab-cost-of-living double-width")
 
     def _get_value(self, value_column):
+        # The variable "a" is assigned in the if statement
         url = a.attrs.get('href') if (a := value_column.find('a')) else None
         return value_column.text, None, url
 
