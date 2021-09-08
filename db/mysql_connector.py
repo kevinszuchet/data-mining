@@ -317,7 +317,6 @@ class MySQLConnector:
         # TODO: think how to avoid inserting duplicate rows without using the description as a UNIQUE constraint
         self._upsert_many('pros_and_cons', id_city, ['description', 'type'], pros + cons)
 
-        # TODO insert only new data (using review date)
         self._upsert_reviews(id_city, details)
 
         self._upsert_weather(id_city, details)
