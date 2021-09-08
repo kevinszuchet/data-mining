@@ -71,9 +71,9 @@ class NomadListScrapper:
 
             soup = BeautifulSoup(page_source, "html.parser")
             self._logger.debug(f"Created Beautiful soup object from the HTML file")
-            cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
+            list_of_cities_html = soup.find_all('li', attrs={'data-type': 'city'})
             self._logger.debug(f"Cities achieved")
-            return cities_lis if num_of_cities is None else cities_lis[:(num_of_cities + 1)]
+            return list_of_cities_html if num_of_cities is None else list_of_cities_html[:num_of_cities]
         except(AttributeError, KeyError) as e:
             self._logger.error(f"Error trying to fetch the cities in the page source: {e}")
             sys.exit(1)
@@ -118,13 +118,12 @@ class NomadListScrapper:
         Then, returns a list of dicts with all the cities.
         """
         page_source = self._get_html(**kwargs)
-        cities_lis = self._get_cities(page_source, **kwargs)
+        list_of_cities_html = self._get_cities(page_source, **kwargs)
 
         total = successes = failures = 0
 
         with MySQLConnector(logger=self._logger) as mysql_connector:
-            for res in self._fetch_details(cities_lis):
-
+            for res in self._fetch_details(list_of_cities_html):
                 try:
                     details = self._map_details(res)
                     res.close()
