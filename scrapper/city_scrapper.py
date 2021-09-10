@@ -25,11 +25,6 @@ class CityScrapper:
         self._logger.debug(f"DynamicTabScrapper: {dynamic_tab_scrapper}")
         return dynamic_tab_scrapper(city_details_soup, logger=self._logger).get_information()
 
-    def get_rank(self, city_li):
-        rank = city_li.attrs.get('data-i')
-        if rank:
-            return int(rank)
-
     def valid_tag(self, city_li):
         """Given the city li, checks if the tag is valid."""
         if city_li is None:
@@ -51,7 +46,7 @@ class CityScrapper:
         except(AttributeError, KeyError) as e:
             self._logger.error(f"Error trying to get the city url {e}")
 
-    def get_city_details(self, rank, city_details_html):
+    def get_city_details(self, city_details_html):
         """
         Given the city details html, takes all the available information about the city within the tabs.
         Then, returns a dict with all that information.
@@ -66,7 +61,7 @@ class CityScrapper:
             city = text.h1.text if text.h1 else "-"
             country = text.h2.text if text.h2 else "-"
             # TODO we have problems with the data-i of the cities. It should be the rank but,
-            #  after 26 cities, it always brings the same value (data-i="26")
+            #  after 26 cities, it always brings the same value (data-i="26").
             rank = int(ScoresTabScrapper(city_details_soup).get_rank())
 
             self._logger.info(f'Fetching the info of {city}, {country} with rank #{rank}')

@@ -71,9 +71,9 @@ class NomadListScrapper:
 
             soup = BeautifulSoup(page_source, "html.parser")
             self._logger.debug(f"Created Beautiful soup object from the HTML file")
-            cities_lis = soup.find_all('li', attrs={'data-type': 'city'})
+            list_of_cities_html = soup.find_all('li', attrs={'data-type': 'city'})
             self._logger.debug(f"Cities achieved")
-            return cities_lis if num_of_cities is None else cities_lis[:(num_of_cities + 1)]
+            return list_of_cities_html if num_of_cities is None else list_of_cities_html[:num_of_cities]
         except(AttributeError, KeyError) as e:
             self._logger.error(f"Error trying to fetch the cities in the page source: {e}")
             sys.exit(1)
@@ -83,19 +83,10 @@ class NomadListScrapper:
         self._logger.debug(f'Number of Cities: {len(lis)}')
         self._logger.info(f"Fetching more info of the cities.... This might take time.")
 
-        def _get_and_set_rank(city_li):
-            return grequests.get(self._city_scrapper.get_city_url(city_li), headers=cfg.HEADERS, stream=False,
-                                 callback=lambda r, **kwargs: self._set_rank(r, city_li))
+        reqs = (grequests.get(self._city_scrapper.get_city_url(li), headers=cfg.HEADERS, stream=False)
+                for li in lis if self._city_scrapper.valid_tag(li))
 
-        reqs = (_get_and_set_rank(li) for li in lis if self._city_scrapper.valid_tag(li))
-
-        map_kwargs = {'size': cfg.NOMAD_LIST_REQUESTS_BATCH_SIZE, 'exception_handler': self._exception_handler}
-        return grequests.imap(reqs, **map_kwargs)
-
-    def _set_rank(self, r, city_li, **kwargs):
-        """Given the response and a City Li, takes the rank of the main page, and set it as a response header."""
-        r.headers.update({'rank': self._city_scrapper.get_rank(city_li)})
-        return r
+        return grequests.imap(reqs, size=cfg.NOMAD_LIST_REQUESTS_BATCH_SIZE, exception_handler=self._exception_handler)
 
     def _exception_handler(self, req, error):
         """Logs the error of the requests."""
@@ -110,7 +101,7 @@ class NomadListScrapper:
         # Raises HTTPError, if one occurred.
         res.raise_for_status()
 
-        return self._city_scrapper.get_city_details(res.headers.get('rank'), city_details_html)
+        return self._city_scrapper.get_city_details(city_details_html)
 
     def scrap_cities(self, *args, **kwargs):
         """
@@ -118,13 +109,12 @@ class NomadListScrapper:
         Then, returns a list of dicts with all the cities.
         """
         page_source = self._get_html(**kwargs)
-        cities_lis = self._get_cities(page_source, **kwargs)
+        list_of_cities_html = self._get_cities(page_source, **kwargs)
 
         total = successes = failures = 0
 
         with MySQLConnector(logger=self._logger) as mysql_connector:
-            for res in self._fetch_details(cities_lis):
-
+            for res in self._fetch_details(list_of_cities_html):
                 try:
                     details = self._map_details(res)
                     res.close()

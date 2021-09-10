@@ -119,9 +119,9 @@ class FilterParser(Parser):
             {
                 'name': 'sorted-by',
                 'positional': False,
-                'type': str,
+                'type': str.lower,
                 'help': 'Sorting criteria. Default: rank.',
-                'choices': ['rank', 'name', 'country', 'continent', 'cost', 'internet', 'fun', 'safety'],
+                'choices': ['rank', 'name', 'country', 'continent', 'overall score', 'cost', 'internet', 'fun', 'safety'],
                 'default': 'rank'
             },
             {
@@ -138,6 +138,7 @@ class FilterParser(Parser):
     def parse(self, *args, **kwargs):
         with MySQLConnector(verbose=kwargs.get('verbose')) as mysql_connector:
             results = mysql_connector.filter_cities_by(*args, **kwargs)
-            headers = ['Rank', 'City', 'Country', 'Continent', '💵 Cost', '📡 Internet', '😀 Fun', '👮 Safety']
+            headers = ['Rank', 'City', 'Country', 'Continent', '⭐ Overall Score', '💵 Cost', '📡 Internet', '😀 Fun',
+                       '👮 Safety']
 
             print('\n\n' + tabulate(results, headers=headers), end='\n\n')
