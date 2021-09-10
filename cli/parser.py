@@ -1,3 +1,5 @@
+import json
+import csv
 from tabulate import tabulate
 from db.mysql_connector import MySQLConnector
 from scrapper.nomad_list_scrapper import NomadListScrapper
@@ -122,7 +124,8 @@ class ShowParser(Parser):
                 'positional': False,
                 'type': str.lower,
                 'help': 'Sorting criteria. Default: rank.',
-                'choices': ['rank', 'name', 'country', 'continent', 'overall score', 'cost', 'internet', 'fun', 'safety'],
+                'choices': ['rank', 'name', 'country', 'continent', 'overall score', 'cost', 'internet', 'fun',
+                            'safety'],
                 'default': 'rank'
             },
             {
@@ -132,14 +135,37 @@ class ShowParser(Parser):
                 'help': 'Order of sorting. Default: ASC.',
                 'choices': ['ASC', 'DESC'],
                 'default': 'ASC'
-            }
+            },
+            {
+                'name': 'output,o',
+                'positional': False,
+                'type': str.lower,
+                'choices': ['table', 'json', 'csv'],
+                'default': 'table',
+                'help': 'Output format. Default: table.'
+            },
         ]
+        self._headers = ['Rank', 'City', 'Country', 'Continent', '⭐ Overall Score', '💵 Cost', '📡 Internet', '😀 Fun',
+                         '👮 Safety']
         super().__init__(params=params, help_message='Fetch and show stored cities that match the filters.')
 
     def parse(self, *args, **kwargs):
+        presenters = {'table': self._to_table, 'json': self._to_json, 'csv': self._to_csv}
+
         with MySQLConnector(verbose=kwargs.get('verbose')) as mysql_connector:
             results = mysql_connector.filter_cities_by(*args, **kwargs)
-            headers = ['Rank', 'City', 'Country', 'Continent', '⭐ Overall Score', '💵 Cost', '📡 Internet', '😀 Fun',
-                       '👮 Safety']
 
-            print('\n\n' + tabulate(results, headers=headers), end='\n\n')
+        presenter = presenters.get(kwargs.get('output'), presenters['table'])
+        print('\n\n' + presenter(results), end='\n\n')
+
+    def _to_table(self, results):
+        return tabulate(results, headers=self._headers)
+
+    def _to_json(self, results):
+        results_list = [{self._headers[i].split(" ", 1)[-1]: value for i, value in enumerate(row)} for row in results]
+        return json.dumps(results_list, indent=4)
+
+    def _to_csv(self, results):
+        headers = ','.join(self._headers)
+        rows = [','.join(map(str, row)) for row in results]
+        return '\n'.join([headers] + rows)

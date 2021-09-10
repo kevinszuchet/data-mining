@@ -204,7 +204,7 @@ Nomad List scrapper in the command line:
       ```bash
       python3 main.py show [-h] [--num-of-cities NUM_OF_CITIES] [--country COUNTRY] [--continent CONTINENT]
                              [--rank-from RANK_FROM] [--rank-to RANK_TO]
-                             [--sorted-by SORTING_CRITERIA] [--order SORTING_ORDER] [--verbose]
+                             [--sorted-by SORTING_CRITERIA] [--order SORTING_ORDER] [--output {table,json,csv}] [--verbose]
 
       Options:
         -h, --help
@@ -217,6 +217,7 @@ Nomad List scrapper in the command line:
                               {rank,name,country,continent,overall score,cost,internet,fun,safety}
         --order:              Order of sorting. Default: ASC.
                               {ASC,DESC}
+        -o, --output:         Output format. Default: table.
         -v, --verbose:        Enable verbosity.
       ```
 #### scrape
