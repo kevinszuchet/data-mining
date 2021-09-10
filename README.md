@@ -199,10 +199,10 @@ Nomad List scrapper in the command line:
         -s --scrolls:         Number of scrolls to make in the site to fetch the cities.
         -v --verbose:         Enable verbosity.
       ```
-3. __Filter the scrapped cities__: Fetch cities stored in the `nomad_list` database that match the user specified 
+3. __Show the scrapped cities__: Fetch cities stored in the `nomad_list` database that match the user specified
       filters.
       ```bash
-      python3 main.py filter [-h] [--num-of-cities NUM_OF_CITIES] [--country COUNTRY] [--continent CONTINENT]
+      python3 main.py show [-h] [--num-of-cities NUM_OF_CITIES] [--country COUNTRY] [--continent CONTINENT]
                              [--rank-from RANK_FROM] [--rank-to RANK_TO]
                              [--sorted-by SORTING_CRITERIA] [--order SORTING_ORDER] [--verbose]
 
@@ -253,14 +253,14 @@ or
 python main.py scrape --scrolls 5
    ```
 
-#### filter_by
-The `filter_by` Command Line Function (CLF) can be executed by running the following code in the CLI:
+#### show_by
+The `show_by` Command Line Function (CLF) can be executed by running the following code in the CLI:
 
 ```bash
-python main.py filter 
+python main.py show
    ```
 
-The `filter` function allows the user to filter through the scrapped data stored in the _nomad_list_ database in order
+The `show` function allows the user to filter through the scrapped data stored in the _nomad_list_ database in order
 to search for cities that meet specific requirements or criteria. Such requirements can be which country or continent 
 the city is situated, what the rank of the city is, or what is the Cost of living for nomad.
 
@@ -268,7 +268,7 @@ For example, if the user wants to find which are the top 10 cities in Europe for
 rank of the city, the code to implement this query is:
 
 ```bash
-python main.py filter -n 10 --continent 'Europe' --sorted-by 'rank' --order 'DESC' 
+python main.py show -n 10 --continent 'Europe' --sorted-by 'rank' --order 'DESC' 
 ``` 
 
 #### Autocompletion

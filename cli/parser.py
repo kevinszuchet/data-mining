@@ -81,8 +81,9 @@ class ScrapeParser(Parser):
         NomadListScrapper(verbose=kwargs.get('verbose')).scrap_cities(*args, **kwargs)
 
 
-class FilterParser(Parser):
-    """Parser that knows how to use the MySQL connector to filter and sort the scrapped data."""
+class ShowParser(Parser):
+    """Parser that knows how to use the MySQL connector to filter and sort the scrapped data.
+    Then, it shows the data in a table format."""
 
     def __init__(self):
         params = [
@@ -133,7 +134,7 @@ class FilterParser(Parser):
                 'default': 'ASC'
             }
         ]
-        super().__init__(params=params, help_message='Fetch stored cities that match the filters.')
+        super().__init__(params=params, help_message='Fetch and show stored cities that match the filters.')
 
     def parse(self, *args, **kwargs):
         with MySQLConnector(verbose=kwargs.get('verbose')) as mysql_connector:
