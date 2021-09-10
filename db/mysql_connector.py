@@ -334,7 +334,7 @@ class MySQLConnector:
     def insert_city_info(self, details):
         """Given the details of the city, insert all the necessary rows to store it in the database."""
 
-        # TODO avoid duplicating the logic between all the cache instances
+        # TODO how to avoid the similar logic between different caches? Is it worthy to make a new class for example?
         id_continent = self._upsert_continent_and_get_id(details)
         id_country = self._upsert_country_and_get_id(id_continent, details)
 
@@ -350,7 +350,6 @@ class MySQLConnector:
         pros_and_cons = details.get('ProsAndCons')
         pros = [(pro, 'P') for pro in pros_and_cons.get('pros')]
         cons = [(con, 'C') for con in pros_and_cons.get('cons')]
-        # TODO: think how to avoid inserting duplicate rows without using the description as a UNIQUE constraint
         self._upsert_many('pros_and_cons', id_city, ['description', 'type'], pros + cons)
 
         self._upsert_reviews(id_city, details)

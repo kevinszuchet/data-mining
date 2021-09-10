@@ -74,12 +74,13 @@ CREATE TABLE IF NOT EXISTS city_attributes (
 
 CREATE TABLE IF NOT EXISTS pros_and_cons (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  description TEXT,
+  description VARCHAR(250),
   type CHAR CHECK (type in ('p', 'c')),
   id_city INT,
   created_on DATETIME NOT NULL DEFAULT NOW(),
   updated_on DATETIME DEFAULT NULL ON UPDATE NOW(),
-  FOREIGN KEY (id_city) REFERENCES cities(id)
+  FOREIGN KEY (id_city) REFERENCES cities(id),
+  UNIQUE (id_city, type, description)
 );
 
 CREATE TABLE IF NOT EXISTS monthly_weathers_attributes (
