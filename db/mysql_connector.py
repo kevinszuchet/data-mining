@@ -6,15 +6,10 @@ from logger import Logger
 from datetime import datetime
 
 
-# TODO: we could avoid all the selections and inserts statements with the tabs and attributes...
-# TODO: Singleton with a dict of tabs and attributes keys.
-
 class MySQLConnector:
     """Class that knows how to handle the connection with MySQL."""
 
-    continents_cache = dict()
-    countries_cache = dict()
-    tabs_cache = dict()
+    continents_cache = countries_cache = tabs_cache = dict()
 
     def __init__(self, logger=None, verbose=False):
         if logger is None:
