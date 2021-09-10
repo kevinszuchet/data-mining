@@ -135,10 +135,7 @@ class NomadListScrapper:
                 finally:
                     total += 1
 
-        self._logger.info(f"""
-        Scrapping finished.
-            - Total scrapped cities: {total}.
-                - Successes: {successes}
-                - Failures: {failures}
-        """)
+        self._logger.info(f"Scrapping finished. Total scrapped cities: {total}.")
+        self._logger.debug(f"Successes: {successes} - Failures: {failures}")
+
         return
