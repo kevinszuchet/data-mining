@@ -170,9 +170,16 @@ class ReviewsTabScrapper(TabScrapper):
         super().__init__(soup, **kwargs)
         self._tab = self._tab_scroller.find("div", class_="tab tab-reviews")
 
+    def _get_review(self, element):
+        return element.find("div", class_="review-text").text
+
+    def _get_published_date(self, element):
+        return element.find("meta", attrs={'itemprop': 'datePublished'}).attrs.get('content')
+
     def _get_information(self):
         """Takes all the reviews in the tab, and returns an array with all of them."""
-        return [review_element.text for review_element in self._tab.find_all("div", class_="review-text")]
+        reviews = self._tab.find_all("div", class_="review", attrs={'itemprop': 'review'})
+        return [(self._get_review(elem), self._get_published_date(elem)) for elem in reviews]
 
 
 class WeatherTabScrapper(TabScrapper):
@@ -272,34 +279,34 @@ def main():
     nomadlist_lisbon_soup = BeautifulSoup(nomadlist_lisbon_text, "html.parser")
 
     scores_tab_scrapper = ScoresTabScrapper(nomadlist_lisbon_soup)
-    # print(scores_tab_scrapper.get_information())
+    print(scores_tab_scrapper.get_information())
 
     digital_nomad_guide_tab_scrapper = DigitalNomadGuideTabScrapper(nomadlist_lisbon_soup)
-    # print(digital_nomad_guide_tab_scrapper.get_information())
+    print(digital_nomad_guide_tab_scrapper.get_information())
 
     cost_of_living_tab_scrapper = CostOfLivingTabScrapper(nomadlist_lisbon_soup)
-    # print(cost_of_living_tab_scrapper.get_information())
+    print(cost_of_living_tab_scrapper.get_information())
 
     pros_and_cons_tab_scrapper = ProsAndConsTabScrapper(nomadlist_lisbon_soup)
-    # print(pros_and_cons_tab_scrapper.get_information())
+    print(pros_and_cons_tab_scrapper.get_information())
 
     reviews_tab_scrapper = ReviewsTabScrapper(nomadlist_lisbon_soup)
-    # print(reviews_tab_scrapper.get_information())
+    print(reviews_tab_scrapper.get_information())
 
     weather_tab_scrapper = WeatherTabScrapper(nomadlist_lisbon_soup)
     print(weather_tab_scrapper.get_information())
 
     photos_tab_scrapper = PhotosTabScrapper(nomadlist_lisbon_soup)
-    # print(photos_tab_scrapper.get_information())
+    print(photos_tab_scrapper.get_information())
 
     near_tab_scrapper = NearTabScrapper(nomadlist_lisbon_soup)
-    # print(near_tab_scrapper.get_information())
+    print(near_tab_scrapper.get_information())
 
     next_tab_scrapper = NextTabScrapper(nomadlist_lisbon_soup)
-    # print(next_tab_scrapper.get_information())
+    print(next_tab_scrapper.get_information())
 
     similar_tab_scrapper = SimilarTabScrapper(nomadlist_lisbon_soup)
-    # print(similar_tab_scrapper.get_information())
+    print(similar_tab_scrapper.get_information())
 
     print("Lets got to sleep before starting again...")
     time.sleep(5)
