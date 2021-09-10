@@ -1,4 +1,5 @@
 import json
+import csv
 from tabulate import tabulate
 from db.mysql_connector import MySQLConnector
 from scrapper.nomad_list_scrapper import NomadListScrapper
@@ -161,7 +162,10 @@ class ShowParser(Parser):
         return tabulate(results, headers=self._headers)
 
     def _to_json(self, results):
-        return tabulate(results, headers=self._headers)
+        results_list = [{self._headers[i].split(" ", 1)[-1]: value for i, value in enumerate(row)} for row in results]
+        return json.dumps(results_list, indent=4)
 
     def _to_csv(self, results):
-        return tabulate(results, headers=self._headers)
+        headers = ','.join(self._headers)
+        rows = [','.join(map(str, row)) for row in results]
+        return '\n'.join([headers] + rows)
