@@ -25,7 +25,7 @@ class AviationStackAPI:
 
     def cities(self):
         """Fetches the cities from the API."""
-        return self._load_file_or_paginate('cities', key_getter=lambda city: print(city) or city.get('city_name'),
+        return self._load_file_or_paginate('cities', key_getter=lambda city: city.get('city_name'),
                                            filename=cfg.AVIATION_STACK.get('cities_filename'))
 
     def airports(self):

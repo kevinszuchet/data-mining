@@ -172,7 +172,7 @@ class ShowParser(Parser):
         return '\n'.join([headers] + rows)
 
 
-class FlightsParser(Parser):
+class AviationStackParser(Parser):
     """Parser that knows how to interact with the Aviation Stack API."""
 
     def __init__(self):
