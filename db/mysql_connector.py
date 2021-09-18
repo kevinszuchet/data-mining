@@ -84,14 +84,18 @@ class MySQLConnector:
         It returns the id of the country.
         """
         country = details.get('country')
+        name = country.pop('name')
 
-        if country in self.countries_cache:
-            self._logger.debug(f"The country {country} was created before, taking the id from the cache...")
-            return self.countries_cache.get(country)
+        if name in self.countries_cache:
+            self._logger.debug(f"The country {name} was created before, taking the id from the cache...")
+            return self.countries_cache.get(name)
 
-        values_dict = {'name': country, 'id_continent': id_continent}
+        currency = country.pop('currency')
+        id_currency = self._upsert_and_get_id('currencies', currency, 'code')
+
+        values_dict = {'name': name, 'id_continent': id_continent, 'id_currency': id_currency, **country}
         id_country = self._upsert_and_get_id("countries", values_dict, domain_identifier='name')
-        self.countries_cache.update({country: id_country})
+        self.countries_cache.update({name: id_country})
         return id_country
 
     def _upsert_and_get_id(self, table, values_dict, domain_identifier=None):
@@ -337,6 +341,8 @@ class MySQLConnector:
         # TODO how to avoid the similar logic between different caches? Is it worthy to make a new class for example?
         id_continent = self._upsert_continent_and_get_id(details)
         id_country = self._upsert_country_and_get_id(id_continent, details)
+
+        return
 
         city = {'name': details.get('city'), 'city_rank': details.get('rank'), 'id_country': id_country}
         id_city = self._upsert_and_get_id("cities", city, domain_identifier='name')
