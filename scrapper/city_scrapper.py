@@ -25,6 +25,40 @@ class CityScrapper:
         self._logger.debug(f"DynamicTabScrapper: {dynamic_tab_scrapper}")
         return dynamic_tab_scrapper(city_details_soup, logger=self._logger).get_information()
 
+    def _get_aviation_stack_country_info(self, country, aviation_stack_countries):
+        aviation_stack_country = aviation_stack_countries.get(country)
+
+        if not aviation_stack_country:
+            return {}
+
+        return {
+            'iso2': aviation_stack_country.get("country_iso2"),
+            'iso3': aviation_stack_country.get("country_iso3"),
+            'iso_numeric': aviation_stack_country.get("country_iso_numeric"),
+            'population': aviation_stack_country.get("population"),
+            'currency': {
+                'name': aviation_stack_country.get("currency_name"),
+                'code': aviation_stack_country.get("currency_code")
+            },
+            'fips_code': aviation_stack_country.get("fips_code"),
+            'phone_prefix': aviation_stack_country.get("phone_prefix")
+        }
+
+    def _get_aviation_stack_city_info(self, city, aviation_stack_cities):
+        aviation_stack_city = aviation_stack_cities.get(city)
+
+        if not aviation_stack_city:
+            return {}
+
+        return {
+            'iata_code': aviation_stack_city.get("iata_code"),
+            'latitude': aviation_stack_city.get("latitude"),
+            'longitude': aviation_stack_city.get("longitude"),
+            'timezone': aviation_stack_city.get("timezone"),
+            'gmt': aviation_stack_city.get("gmt"),
+            'geoname_id': aviation_stack_city.get("geoname_id")
+        }
+
     def valid_tag(self, city_li):
         """Given the city li, checks if the tag is valid."""
         if city_li is None:
@@ -46,7 +80,7 @@ class CityScrapper:
         except(AttributeError, KeyError) as e:
             self._logger.error(f"Error trying to get the city url {e}")
 
-    def get_city_details(self, city_details_html):
+    def get_city_details(self, city_details_html, aviation_stack_countries, aviation_stack_cities):
         """
         Given the city details html, takes all the available information about the city within the tabs.
         Then, returns a dict with all that information.
@@ -75,9 +109,13 @@ class CityScrapper:
 
             return {
                 'city': city,
-                'country': country,
+                'country': {
+                    'name': country,
+                    **self._get_aviation_stack_country_info(country, aviation_stack_countries),
+                },
                 'continent': DigitalNomadGuideTabScrapper(city_details_soup).get_continent(),
                 'rank': rank,
+                **self._get_aviation_stack_city_info(city, aviation_stack_cities),
                 **tabs_information
             }
         except(AttributeError, KeyError) as e:

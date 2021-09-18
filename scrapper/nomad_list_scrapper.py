@@ -8,6 +8,7 @@ from db.mysql_connector import MySQLConnector
 import sys
 from logger import Logger
 from scrapper.web_driver import WebDriver
+from apis.aviation_stack import AviationStackAPI
 
 SHOULD_USE_THE_HTML_FILE = os.getenv('ENV') != "production" and cfg.LOAD_HTML_FROM_DISK
 
@@ -28,6 +29,8 @@ class NomadListScrapper:
         self._logger = logger
 
         self._verbose = verbose
+
+        self._aviation_stack_api = AviationStackAPI(self._logger, verbose=verbose)
 
     def _load_html_from_disk(self):
         """Attempts to load the html locally"""
@@ -92,7 +95,7 @@ class NomadListScrapper:
         """Logs the error of the requests."""
         self._logger.error(f"Error making the request {req.url}: {error}.\n The response was: {req.response}")
 
-    def _map_details(self, res):
+    def _map_details(self, res, aviation_stack_countries, aviation_stack_cities):
         """Try to get the details of the city using the content of the response. If the request failed,
         raises the appropriate an exception."""
         city_details_html = res.content
@@ -101,7 +104,7 @@ class NomadListScrapper:
         # Raises HTTPError, if one occurred.
         res.raise_for_status()
 
-        return self._city_scrapper.get_city_details(city_details_html)
+        return self._city_scrapper.get_city_details(city_details_html, aviation_stack_countries, aviation_stack_cities)
 
     def scrap_cities(self, *args, **kwargs):
         """
@@ -111,12 +114,15 @@ class NomadListScrapper:
         page_source = self._get_html(**kwargs)
         list_of_cities_html = self._get_cities(page_source, **kwargs)
 
+        aviation_stack_countries = self._aviation_stack_api.countries()
+        aviation_stack_cities = self._aviation_stack_api.cities()
+
         total = successes = failures = 0
 
         with MySQLConnector(logger=self._logger) as mysql_connector:
             for res in self._fetch_details(list_of_cities_html):
                 try:
-                    details = self._map_details(res)
+                    details = self._map_details(res, aviation_stack_countries, aviation_stack_cities)
                     res.close()
 
                     if details is None:
