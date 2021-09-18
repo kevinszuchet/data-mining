@@ -3,14 +3,20 @@ import os
 import requests
 import math
 import conf as cfg
+from logger import Logger
 
 
 class AviationStackAPI:
     """Adapter for the Aviation Stack API. It knows how to handle the api calls to the real API."""
 
-    def __init__(self):
+    def __init__(self, logger=None, verbose=False, **kwargs):
         self._base_url = cfg.AVIATION_STACK.get('uri')
         self._access_key = cfg.AVIATION_STACK.get('access_key')
+
+        if logger is None:
+            logger = Logger(verbose=verbose).logger
+
+        self._logger = logger
 
     def countries(self):
         """Fetches the countries from the API."""
@@ -69,6 +75,10 @@ class AviationStackAPI:
         if params is None:
             params = {}
 
-        response = requests.get(self._base_url + path, {**params, 'access_key': self._access_key})
+        params = {**params, 'access_key': self._access_key}
+
+        self._logger.debug(f"GET - {self._base_url + path}, Params: {params}")
+        response = requests.get(self._base_url + path, params)
+        self._logger.debug(f"Status Code: {response.status_code}")
         response.raise_for_status()
         return response.json()
