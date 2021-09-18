@@ -98,6 +98,18 @@ class MySQLConnector:
         self.countries_cache.update({name: id_country})
         return id_country
 
+    def _upsert_city_and_get_id(self, id_country, details):
+        """
+        Given the id of the country and the details from Nomad List and the Aviation Stack API, it will upsert the city.
+        Then, it returns the id of the country.
+        """
+        additional_fields = ['iata_code', 'latitude', 'longitude', 'timezone', 'gmt', 'geoname_id']
+        city_additional_fields = {key: details.get(key) for key in additional_fields}
+
+        city = {'name': details.get('city'), 'city_rank': details.get('rank'), 'id_country': id_country,
+                **city_additional_fields}
+        return self._upsert_and_get_id("cities", city, domain_identifier='name')
+
     def _upsert_and_get_id(self, table, values_dict, domain_identifier=None):
         """
             Upsert a row in a table, and returns the id of it.
@@ -342,10 +354,7 @@ class MySQLConnector:
         id_continent = self._upsert_continent_and_get_id(details)
         id_country = self._upsert_country_and_get_id(id_continent, details)
 
-        return
-
-        city = {'name': details.get('city'), 'city_rank': details.get('rank'), 'id_country': id_country}
-        id_city = self._upsert_and_get_id("cities", city, domain_identifier='name')
+        id_city = self._upsert_city_and_get_id(id_country, details)
 
         self._upsert_key_value_tab_info(id_city, 'Scores', details.get('Scores', {}))
         self._upsert_key_value_tab_info(id_city, 'Digital Nomad Guide', details.get('DigitalNomadGuide', {}))
