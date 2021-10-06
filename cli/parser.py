@@ -182,13 +182,12 @@ class AviationStackParser(Parser):
                 'positional': False,
                 'type': str.lower,
                 'help': 'Name of the desired resource.',
-                'choices': ['countries', 'cities', 'airports']
+                'choices': ['countries', 'cities'] # TODO: 'airports'
             }
         ]
         super().__init__(params=params, help_message='Calls the correspondent endpoints of the API.')
 
     def parse(self, *args, **kwargs):
-        resource = kwargs.get('resource')
         api = AviationStackAPI()
         methods = {'countries': api.countries, 'cities': api.cities, 'airports': api.airports}
         method = methods.get(kwargs.get('resource'))

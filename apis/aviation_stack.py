@@ -61,8 +61,6 @@ class AviationStackAPI:
         and makes those requests."""
         first_page = fetcher(path)
         yield first_page
-        yield first_page
-        yield first_page
         pagination = first_page.get('pagination', {})
         count = pagination.get('count')
         n_pages = math.ceil(pagination.get('total') / count)
