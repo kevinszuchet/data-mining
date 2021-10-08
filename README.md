@@ -294,7 +294,7 @@ After resetting the terminal, the autocomplete will be ready to be used.
 ## Storage
 
 ### ERD
-[![Nomad List ERD](https://user-images.githubusercontent.com/31735779/132088145-5d919119-d155-42f0-ad35-6bf573c8221b.jpeg)](https://lucid.app/lucidchart/3ca812c4-bcc8-4227-b7db-d8966d1fcb74/view?page=.C-3zxKe0gpQ#)
+[![Nomad List_ Data Mining Project - ERD - ERD](https://user-images.githubusercontent.com/31735779/136143290-dce447ce-4f87-46ca-ab41-a7b98a3189f6.jpeg)](https://lucid.app/lucidchart/3ca812c4-bcc8-4227-b7db-d8966d1fcb74/view?page=.C-3zxKe0gpQ#)
 
 ## Project Status
 Project is: _in progress_

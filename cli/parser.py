@@ -3,6 +3,7 @@ import csv
 from tabulate import tabulate
 from db.mysql_connector import MySQLConnector
 from scrapper.nomad_list_scrapper import NomadListScrapper
+from apis.aviation_stack import AviationStackAPI
 
 OPTIONAL_KWARGS = ['type', 'action', 'choices', 'default']
 VERBOSE_PARAM = {'name': 'verbose,v', 'positional': False, 'action': 'store_true', 'help': 'Enable verbosity.'}
@@ -169,3 +170,30 @@ class ShowParser(Parser):
         headers = ','.join(self._headers)
         rows = [','.join(map(str, row)) for row in results]
         return '\n'.join([headers] + rows)
+
+
+class AviationStackParser(Parser):
+    """Parser that knows how to interact with the Aviation Stack API."""
+
+    def __init__(self):
+        params = [
+            {
+                'name': 'resource,r',
+                'positional': False,
+                'type': str.lower,
+                'help': 'Name of the desired resource.',
+                'choices': ['countries', 'cities']
+            }
+        ]
+        super().__init__(params=params, help_message='Calls the correspondent endpoints of the API.')
+
+    def parse(self, *args, **kwargs):
+        api = AviationStackAPI()
+        methods = {'countries': api.countries, 'cities': api.cities}
+        method = methods.get(kwargs.get('resource'))
+        res = None
+
+        if method:
+            res = method()
+
+        print(res)

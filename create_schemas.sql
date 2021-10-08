@@ -10,13 +10,29 @@ CREATE TABLE IF NOT EXISTS continents (
   updated_on DATETIME DEFAULT NULL ON UPDATE NOW()
 );
 
+CREATE TABLE IF NOT EXISTS currencies (
+  id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50) UNIQUE,
+  code VARCHAR(10) UNIQUE,
+  created_on DATETIME NOT NULL DEFAULT NOW(),
+  updated_on DATETIME DEFAULT NULL ON UPDATE NOW()
+);
+
 CREATE TABLE IF NOT EXISTS countries (
   id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(50) UNIQUE,
   id_continent INT,
+  iso2 CHAR(2) UNIQUE,
+  iso3 CHAR(3) UNIQUE,
+  iso_numeric SMALLINT UNIQUE,
+  population INT,
+  id_currency INT,
+  fips_code VARCHAR(10),
+  phone_prefix VARCHAR(100),
   created_on DATETIME NOT NULL DEFAULT NOW(),
   updated_on DATETIME DEFAULT NULL ON UPDATE NOW(),
-  FOREIGN KEY(id_continent) REFERENCES continents(id)
+  FOREIGN KEY(id_continent) REFERENCES continents(id),
+  FOREIGN KEY (id_currency) REFERENCES currencies(id)
 );
 
 CREATE TABLE IF NOT EXISTS cities (
@@ -24,6 +40,12 @@ CREATE TABLE IF NOT EXISTS cities (
   name VARCHAR(100) UNIQUE,
   city_rank INT,
   id_country INT,
+  iata_code CHAR(3) UNIQUE,
+  latitude DOUBLE,
+  longitude DOUBLE,
+  timezone VARCHAR(100),
+  gmt SMALLINT,
+  geoname_id INT,
   created_on DATETIME NOT NULL DEFAULT NOW(),
   updated_on DATETIME DEFAULT NULL ON UPDATE NOW(),
   FOREIGN KEY (id_country) REFERENCES countries(id)

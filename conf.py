@@ -12,12 +12,12 @@ NOMAD_LIST_REQUESTS_BATCH_SIZE = 20
 
 CHROME_DRIVER_PATH = os.getenv('NOMAD_LIST_CHROME_DRIVER_PATH')
 
-LOG_FILE = "logs.log"
+LOG_FILE = "files/logs.log"
 LOG_FORMAT = '%(asctime)s-%(levelname)s-FILE:%(filename)s-FUNC:%(funcName)s-LINE:%(lineno)d-%(message)s'
 
-JSON_FILENAME = "data.json"
+JSON_FILENAME = "files/data.json"
 LOGGER_LEVEL = "INFO"
-PAGE_SOURCE = "page_source.html"
+PAGE_SOURCE = "files/page_source.html"
 LOAD_HTML_FROM_DISK = False
 SCROLL = True
 HEADERS = {
@@ -30,4 +30,11 @@ MYSQL = {
     'user': os.getenv('NOMAD_LIST_MYSQL_USER') or 'root',
     'password': os.getenv('NOMAD_LIST_MYSQL_PASSWORD') or '',
     'database': os.getenv('NOMAD_LIST_MYSQL_DATABASE') or 'nomad_list'
+}
+
+AVIATION_STACK = {
+    'uri': os.getenv('AVIATION_STACK_URI') or 'http://api.aviationstack.com/v1/',
+    'access_key': os.getenv('AVIATION_STACK_ACCESS_KEY') or '36117c41b6482d630207ffc137858e66',
+    'countries_filename': os.getenv('AVIATION_STACK_COUNTRIES_FILENAME') or 'files/countries.json',
+    'cities_filename': os.getenv('AVIATION_STACK_CITIES_FILENAME') or 'files/cities.json',
 }

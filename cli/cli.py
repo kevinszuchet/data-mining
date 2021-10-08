@@ -1,7 +1,7 @@
 import sys
 import argparse, argcomplete
 from logger import Logger
-from cli.parser import SetupSchemasParser, ScrapeParser, ShowParser
+from cli.parser import SetupSchemasParser, ScrapeParser, ShowParser, AviationStackParser
 from pymysql.err import OperationalError
 
 UNKNOWN_DATABASE = 1049
@@ -15,7 +15,8 @@ class CommandLineInterface:
         self._parser = argparse.ArgumentParser(description="This CLI controls the Nomad List Scrapper", prog="nls",
                                                epilog=epilog,
                                                allow_abbrev=False)
-        self._parsers = {'setup-db': SetupSchemasParser(), 'scrape': ScrapeParser(), 'show': ShowParser()}
+        self._parsers = {'setup-db': SetupSchemasParser(), 'scrape': ScrapeParser(), 'show': ShowParser(),
+                         'aviation-stack': AviationStackParser()}
         self._sub_parser = self._parser.add_subparsers(dest="command")
         self._add_parsers()
         argcomplete.autocomplete(self._parser)
@@ -36,7 +37,6 @@ class CommandLineInterface:
 
         verbose = inputs.get('verbose')
         logger = Logger(verbose=verbose).logger
-
 
         if not command:
             self._parser.print_help()
