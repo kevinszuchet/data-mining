@@ -28,10 +28,6 @@ class AviationStackAPI:
         return self._load_file_or_paginate('cities', key_getter=lambda city: city.get('city_name'),
                                            filename=cfg.AVIATION_STACK.get('cities_filename'))
 
-    def airports(self):
-        """Fetches the airports from the API."""
-        pass
-
     def _load_file_or_paginate(self, resource, key_getter=None, filename=None):
         """
         Given some params, tries to load a json file to avoid making the requests to the API.

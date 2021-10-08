@@ -138,18 +138,3 @@ CREATE TABLE IF NOT EXISTS photos (
   FOREIGN KEY (id_city) REFERENCES cities(id),
   UNIQUE (id_city, src)
 );
-
-CREATE TABLE IF NOT EXISTS airports (
-    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255),
-    iata_code CHAR(3) UNIQUE,
-    icao_code CHAR(4) UNIQUE,
-    latitude DOUBLE,
-    longitude DOUBLE,
-    geoname_id INT,
-    phone_number VARCHAR(100),
-    id_city INT,
-    created_on DATETIME NOT NULL DEFAULT NOW(),
-    updated_on DATETIME DEFAULT NULL ON UPDATE NOW(),
-    FOREIGN KEY (id_city) REFERENCES cities(id)
-);
