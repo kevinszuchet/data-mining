@@ -84,14 +84,16 @@ class MySQLConnector:
         It returns the id of the country.
         """
         country = details.get('country')
-        name = country.pop('name')
+        name = country.pop('name', None)
 
         if name in self.countries_cache:
             self._logger.debug(f"The country {name} was created before, taking the id from the cache...")
             return self.countries_cache.get(name)
 
-        currency = country.pop('currency')
-        id_currency = self._upsert_and_get_id('currencies', currency, 'code')
+        currency = country.pop('currency', None)
+        id_currency = None
+        if currency:
+            id_currency = self._upsert_and_get_id('currencies', currency, 'code')
 
         values_dict = {'name': name, 'id_continent': id_continent, 'id_currency': id_currency, **country}
         id_country = self._upsert_and_get_id("countries", values_dict, domain_identifier='name')
