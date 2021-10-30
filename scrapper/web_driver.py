@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver import ChromeOptions
 from webdriver_manager.chrome import ChromeDriverManager
 import conf as cfg
 import time
@@ -14,7 +15,10 @@ class WebDriver:
         self._logger.info('Initializing the web_driver')
         chrome_driver_manager = ChromeDriverManager(
             cfg.CHROME_DRIVER_PATH) if cfg.CHROME_DRIVER_PATH else ChromeDriverManager()
-        self._driver = webdriver.Chrome(chrome_driver_manager.install())
+        # Headless version of chrome for ubuntu server
+        options = webdriver.ChromeOptions()
+        options.add_argument('headless')
+        self._driver = webdriver.Chrome(chrome_driver_manager.install(), chrome_options=options)
 
     def _get_scroll_height(self):
         """Takes the scroll height of the document executing javascript in the browser."""
