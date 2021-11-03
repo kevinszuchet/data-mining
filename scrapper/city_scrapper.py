@@ -37,7 +37,7 @@ class CityScrapper:
             'iso_numeric': aviation_stack_country.get("country_iso_numeric"),
             'population': aviation_stack_country.get("population"),
             'currency': {
-                'name': aviation_stack_country.get("currency_name"),
+                'name': f'{aviation_stack_country.get("currency_name")} ({country})',
                 'code': aviation_stack_country.get("currency_code")
             },
             'fips_code': aviation_stack_country.get("fips_code"),
